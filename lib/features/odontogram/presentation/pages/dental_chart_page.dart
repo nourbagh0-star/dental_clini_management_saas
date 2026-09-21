@@ -1,0 +1,1277 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' hide TextDirection;
+
+import '../../../../app/localization/generated/app_localizations.dart';
+import '../../../../app/theme/app_theme.dart';
+import '../../../../core/error/failure_message.dart';
+import '../../../../core/widgets/app_dialog.dart';
+import '../../../clinic/presentation/clinic_cubit.dart';
+import '../../../patient/domain/patient_models.dart';
+import '../../../patient/presentation/patient_cubit.dart';
+import '../../../patient/presentation/widgets/patient_medical_alert_banner.dart';
+import '../../domain/odontogram_models.dart';
+import '../odontogram_cubit.dart';
+
+class DentalChartPage extends StatefulWidget {
+  const DentalChartPage({required this.patientId, super.key});
+  final String patientId;
+
+  @override
+  State<DentalChartPage> createState() => _DentalChartPageState();
+}
+
+class _DentalChartPageState extends State<DentalChartPage> {
+  String? _loadedPatientId;
+  Dentition _dentition = Dentition.permanent;
+  int? _selectedTooth;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final mobile = AppBreakpoints.of(context) == AppLayoutClass.mobile;
+    final roles =
+        context.watch<ClinicCubit>().state.activeMembership?.roles ??
+        const <String>{};
+    final canRead =
+        roles.contains('owner') ||
+        roles.contains('dentist') ||
+        roles.contains('assistant');
+    final canEdit = roles.contains('dentist');
+    final patient = context
+        .watch<PatientCubit>()
+        .state
+        .patients
+        .where((item) => item.id == widget.patientId)
+        .firstOrNull;
+    if (!canRead) return const _DentalChartUnavailable();
+    if (patient == null) {
+      return Scaffold(body: _DentalChartMessage(l.dentalChartUnavailable));
+    }
+    if (_loadedPatientId != widget.patientId) {
+      _loadedPatientId = widget.patientId;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => context.read<OdontogramCubit>().load(widget.patientId),
+      );
+    }
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l.dentalChartTitle),
+        leading: IconButton(
+          onPressed: () => context.go('/patients/${widget.patientId}'),
+          icon: const Icon(Icons.arrow_back),
+          tooltip: l.backToPatientProfile,
+        ),
+      ),
+      body: BlocConsumer<OdontogramCubit, OdontogramState>(
+        listener: (context, state) {
+          final message = state.issue == null
+              ? null
+              : _issueMessage(state.issue!, l);
+          if (message != null) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(content: Text(message)));
+          }
+        },
+        builder: (context, state) => ListView(
+          padding: AppInsets.page(AppBreakpoints.of(context)),
+          children: [
+            _PatientHeader(patient: patient),
+            const SizedBox(height: 12),
+            PatientMedicalAlertBanner(patientId: widget.patientId),
+            const SizedBox(height: 16),
+            if (mobile)
+              DropdownButtonFormField<Dentition>(
+                key: const ValueKey('dentition-selector'),
+                isExpanded: true,
+                initialValue: _dentition,
+                decoration: InputDecoration(labelText: l.dentitionLabel),
+                items: [
+                  DropdownMenuItem(
+                    value: Dentition.permanent,
+                    child: Text(l.permanentTeethLabel),
+                  ),
+                  DropdownMenuItem(
+                    value: Dentition.primary,
+                    child: Text(l.primaryTeethLabel),
+                  ),
+                ],
+                onChanged: (value) => setState(() {
+                  _dentition = value!;
+                  _selectedTooth = null;
+                }),
+              )
+            else
+              SegmentedButton<Dentition>(
+                segments: [
+                  ButtonSegment(
+                    value: Dentition.permanent,
+                    label: Text(l.permanentTeethLabel),
+                  ),
+                  ButtonSegment(
+                    value: Dentition.primary,
+                    label: Text(l.primaryTeethLabel),
+                  ),
+                ],
+                selected: {_dentition},
+                onSelectionChanged: (selection) => setState(() {
+                  _dentition = selection.first;
+                  _selectedTooth = null;
+                }),
+              ),
+            const SizedBox(height: 16),
+            if (state.status == OdontogramLoadStatus.loading)
+              const LinearProgressIndicator(),
+            if (state.failure != null) ...[
+              const SizedBox(height: 12),
+              _DentalChartMessage(
+                failureMessage(state.failure!, AppLocalizations.of(context)),
+              ),
+            ],
+            const SizedBox(height: 12),
+            _ToothArch(
+              dentition: _dentition,
+              selectedTooth: _selectedTooth,
+              conditions: state.active,
+              onSelected: (tooth) => setState(() => _selectedTooth = tooth),
+            ),
+            if (canEdit) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: state.mutating
+                    ? null
+                    : () => _showAddCondition(context, state),
+                icon: const Icon(Icons.add_chart_outlined),
+                label: Text(
+                  _selectedTooth == null
+                      ? l.selectToothToAdd
+                      : l.addConditionToTooth(_selectedTooth!),
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
+            _SelectedToothPanel(
+              toothNumber: _selectedTooth,
+              conditions: state.active
+                  .where((condition) => condition.toothNumber == _selectedTooth)
+                  .toList(growable: false),
+              canEdit: canEdit,
+              mutating: state.mutating,
+              onResolve: (condition) => _confirmResolve(context, condition),
+              onMarkInError: (condition) =>
+                  _showCorrectionReason(context, condition),
+            ),
+            const SizedBox(height: 16),
+            _HistorySection(
+              history: state.history,
+              hasMore: state.historyHasMore,
+              loadingMore: state.loadingMore,
+              onLoadMore: () =>
+                  context.read<OdontogramCubit>().loadMoreHistory(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAddCondition(
+    BuildContext context,
+    OdontogramState state,
+  ) async {
+    final selectedTooth = _selectedTooth;
+    if (selectedTooth == null) {
+      final l = AppLocalizations.of(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.selectToothFirst)));
+      return;
+    }
+    final notes = TextEditingController();
+    var type = ToothConditionType.caries;
+    var surface = ToothSurface.whole;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final l = AppLocalizations.of(context);
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              MediaQuery.viewInsetsOf(context).bottom + 24,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l.addConditionTitle(selectedTooth),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<ToothConditionType>(
+                    isExpanded: true,
+                    initialValue: type,
+                    decoration: InputDecoration(labelText: l.conditionLabel),
+                    items: ToothConditionType.values
+                        .map(
+                          (item) => DropdownMenuItem(
+                            value: item,
+                            child: Text(_conditionLabel(item, l)),
+                          ),
+                        )
+                        .toList(growable: false),
+                    onChanged: (value) => setSheetState(() {
+                      type = value!;
+                      if (type.wholeToothOnly) surface = ToothSurface.whole;
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<ToothSurface>(
+                    isExpanded: true,
+                    initialValue: surface,
+                    decoration: InputDecoration(labelText: l.surfaceLabel),
+                    items: ToothSurface.values
+                        .where(
+                          (item) =>
+                              !type.wholeToothOnly ||
+                              item == ToothSurface.whole,
+                        )
+                        .map(
+                          (item) => DropdownMenuItem(
+                            value: item,
+                            child: Text(_surfaceLabel(item, l)),
+                          ),
+                        )
+                        .toList(growable: false),
+                    onChanged: (value) => setSheetState(() => surface = value!),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notes,
+                    maxLength: 2000,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: l.clinicalNoteOptional,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: () async {
+                      final succeeded = await context
+                          .read<OdontogramCubit>()
+                          .create(
+                            patientId: widget.patientId,
+                            draft: ToothConditionDraft(
+                              toothNumber: selectedTooth,
+                              surface: surface,
+                              type: type,
+                              notes: notes.text.trim().isEmpty
+                                  ? null
+                                  : notes.text.trim(),
+                            ),
+                          );
+                      if (succeeded && context.mounted) Navigator.pop(context);
+                    },
+                    child: Text(l.saveConditionLabel),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    notes.dispose();
+  }
+
+  Future<void> _confirmResolve(
+    BuildContext context,
+    ToothCondition condition,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final approved = await showSettledDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l.resolveConditionQuestion),
+        content: Text(
+          l.resolveConditionExplanation(
+            _conditionLabel(condition.type, l),
+            condition.toothNumber,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l.cancelLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(l.resolveLabel),
+          ),
+        ],
+      ),
+    );
+    if (approved != true || !context.mounted) return;
+    await context.read<OdontogramCubit>().resolve(
+      patientId: widget.patientId,
+      conditionId: condition.id,
+    );
+  }
+
+  Future<void> _showCorrectionReason(
+    BuildContext context,
+    ToothCondition condition,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final reason = TextEditingController();
+    await showSettledDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l.markEntryErrorTitle),
+        content: TextField(
+          controller: reason,
+          autofocus: true,
+          maxLength: 1000,
+          maxLines: 3,
+          decoration: InputDecoration(labelText: l.entryErrorReasonLabel),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(l.cancelLabel),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (reason.text.trim().isEmpty) return;
+              final succeeded = await context
+                  .read<OdontogramCubit>()
+                  .markInError(
+                    patientId: widget.patientId,
+                    conditionId: condition.id,
+                    reason: reason.text.trim(),
+                  );
+              if (succeeded && dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+            },
+            child: Text(l.preserveAsErrorLabel),
+          ),
+        ],
+      ),
+    );
+    reason.dispose();
+  }
+
+  String _issueMessage(OdontogramOperationIssue issue, AppLocalizations l) =>
+      switch (issue) {
+        OdontogramOperationIssue.forbidden => l.odontogramForbiddenIssue,
+        OdontogramOperationIssue.unavailable => l.odontogramUnavailableIssue,
+        OdontogramOperationIssue.invalidInput => l.odontogramInvalidInputIssue,
+        OdontogramOperationIssue.missingToothConflict =>
+          l.missingToothConflictIssue,
+        OdontogramOperationIssue.duplicateActiveCondition =>
+          l.duplicateConditionIssue,
+        OdontogramOperationIssue.conditionNotActive =>
+          l.conditionNotActiveIssue,
+      };
+}
+
+class _PatientHeader extends StatelessWidget {
+  const _PatientHeader({required this.patient});
+  final Patient patient;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: ListTile(
+      leading: const Icon(Icons.person_outline),
+      title: Text(patient.fullName),
+      subtitle: Text(patient.patientNumber),
+    ),
+  );
+}
+
+class _ToothArch extends StatelessWidget {
+  const _ToothArch({
+    required this.dentition,
+    required this.selectedTooth,
+    required this.conditions,
+    required this.onSelected,
+  });
+  final Dentition dentition;
+  final int? selectedTooth;
+  final List<ToothCondition> conditions;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final isPermanent = dentition == Dentition.permanent;
+    final upperRight = isPermanent
+        ? const [18, 17, 16, 15, 14, 13, 12, 11]
+        : const [55, 54, 53, 52, 51];
+    final upperLeft = isPermanent
+        ? const [21, 22, 23, 24, 25, 26, 27, 28]
+        : const [61, 62, 63, 64, 65];
+    final lowerRight = isPermanent
+        ? const [48, 47, 46, 45, 44, 43, 42, 41]
+        : const [85, 84, 83, 82, 81];
+    final lowerLeft = isPermanent
+        ? const [31, 32, 33, 34, 35, 36, 37, 38]
+        : const [71, 72, 73, 74, 75];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final contentWidth = constraints.maxWidth > 780
+                  ? constraints.maxWidth
+                  : 780.0;
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: contentWidth,
+                  child: Column(
+                    children: [
+                      _QuadrantHeader(
+                        leftLabel: l.quadrantUpperRight,
+                        rightLabel: l.quadrantUpperLeft,
+                        midlineLabel: l.dentalMidline,
+                      ),
+                      const SizedBox(height: 6),
+                      _ArchRow(
+                        leftTeeth: upperRight,
+                        rightTeeth: upperLeft,
+                        isUpper: true,
+                        selectedTooth: selectedTooth,
+                        conditions: conditions,
+                        onSelected: onSelected,
+                      ),
+                      const SizedBox(height: 8),
+                      _JawDivider(
+                        upperLabel: l.maxillaUpperJaw,
+                        lowerLabel: l.mandibleLowerJaw,
+                      ),
+                      const SizedBox(height: 8),
+                      _ArchRow(
+                        leftTeeth: lowerRight,
+                        rightTeeth: lowerLeft,
+                        isUpper: false,
+                        selectedTooth: selectedTooth,
+                        conditions: conditions,
+                        onSelected: onSelected,
+                      ),
+                      const SizedBox(height: 6),
+                      _QuadrantHeader(
+                        leftLabel: l.quadrantLowerRight,
+                        rightLabel: l.quadrantLowerLeft,
+                        midlineLabel: l.dentalMidline,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuadrantHeader extends StatelessWidget {
+  const _QuadrantHeader({
+    required this.leftLabel,
+    required this.rightLabel,
+    required this.midlineLabel,
+  });
+
+  final String leftLabel;
+  final String rightLabel;
+  final String midlineLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              leftLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              midlineLabel,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              rightLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _JawDivider extends StatelessWidget {
+  const _JawDivider({required this.upperLabel, required this.lowerLabel});
+
+  final String upperLabel;
+  final String lowerLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 1.5,
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.5,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.arrow_upward,
+                size: 11,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                upperLabel,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '·',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                lowerLabel,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.secondary,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.arrow_downward,
+                size: 11,
+                color: theme.colorScheme.secondary,
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: 1.5,
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ArchRow extends StatelessWidget {
+  const _ArchRow({
+    required this.leftTeeth,
+    required this.rightTeeth,
+    required this.isUpper,
+    required this.selectedTooth,
+    required this.conditions,
+    required this.onSelected,
+  });
+
+  final List<int> leftTeeth;
+  final List<int> rightTeeth;
+  final bool isUpper;
+  final int? selectedTooth;
+  final List<ToothCondition> conditions;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (final tooth in leftTeeth) ...[
+          _ToothButton(
+            toothNumber: tooth,
+            isUpper: isUpper,
+            selected: tooth == selectedTooth,
+            conditions: conditions
+                .where((c) => c.toothNumber == tooth)
+                .toList(growable: false),
+            onTap: () => onSelected(tooth),
+          ),
+          if (tooth != leftTeeth.last) const SizedBox(width: 4),
+        ],
+        Container(
+          width: 2,
+          height: 64,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(1),
+          ),
+        ),
+        for (final tooth in rightTeeth) ...[
+          _ToothButton(
+            toothNumber: tooth,
+            isUpper: isUpper,
+            selected: tooth == selectedTooth,
+            conditions: conditions
+                .where((c) => c.toothNumber == tooth)
+                .toList(growable: false),
+            onTap: () => onSelected(tooth),
+          ),
+          if (tooth != rightTeeth.last) const SizedBox(width: 4),
+        ],
+      ],
+    );
+  }
+}
+
+class _ToothButton extends StatelessWidget {
+  const _ToothButton({
+    required this.toothNumber,
+    required this.isUpper,
+    required this.selected,
+    required this.conditions,
+    required this.onTap,
+  });
+
+  final int toothNumber;
+  final bool isUpper;
+  final bool selected;
+  final List<ToothCondition> conditions;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: conditions.isEmpty
+          ? l.toothHealthySemantics(toothNumber)
+          : l.toothConditionsSemantics(toothNumber, conditions.length),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          width: 44,
+          constraints: const BoxConstraints(minHeight: 68),
+          padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 2),
+          decoration: BoxDecoration(
+            color: selected
+                ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
+                : theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: selected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: isUpper
+                    ? [
+                        Text(
+                          '$toothNumber',
+                          textScaler: TextScaler.noScaling,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: selected
+                                ? FontWeight.w800
+                                : FontWeight.w700,
+                            color: selected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        CustomPaint(
+                          size: const Size(34, 34),
+                          painter: _ToothSurfacePainter(
+                            toothNumber: toothNumber,
+                            isUpper: isUpper,
+                            conditions: conditions,
+                            colorScheme: theme.colorScheme,
+                          ),
+                        ),
+                      ]
+                    : [
+                        CustomPaint(
+                          size: const Size(34, 34),
+                          painter: _ToothSurfacePainter(
+                            toothNumber: toothNumber,
+                            isUpper: isUpper,
+                            conditions: conditions,
+                            colorScheme: theme.colorScheme,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$toothNumber',
+                          textScaler: TextScaler.noScaling,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: selected
+                                ? FontWeight.w800
+                                : FontWeight.w700,
+                            color: selected
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ],
+              ),
+              if (conditions.length > 1)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 14,
+                      minHeight: 14,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${conditions.length}',
+                        textScaler: TextScaler.noScaling,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ToothSurfacePainter extends CustomPainter {
+  const _ToothSurfacePainter({
+    required this.toothNumber,
+    required this.isUpper,
+    required this.conditions,
+    required this.colorScheme,
+  });
+
+  final int toothNumber;
+  final bool isUpper;
+  final List<ToothCondition> conditions;
+  final ColorScheme colorScheme;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    final isRightQuadrant =
+        (toothNumber >= 11 && toothNumber <= 18) ||
+        (toothNumber >= 41 && toothNumber <= 48) ||
+        (toothNumber >= 51 && toothNumber <= 55) ||
+        (toothNumber >= 81 && toothNumber <= 85);
+
+    ToothCondition? occlusalCondition;
+    ToothCondition? buccalCondition;
+    ToothCondition? lingualCondition;
+    ToothCondition? mesialCondition;
+    ToothCondition? distalCondition;
+    ToothCondition? wholeCondition;
+
+    for (final c in conditions) {
+      switch (c.surface) {
+        case ToothSurface.occlusal:
+          occlusalCondition ??= c;
+        case ToothSurface.buccal:
+          buccalCondition ??= c;
+        case ToothSurface.lingual:
+          lingualCondition ??= c;
+        case ToothSurface.mesial:
+          mesialCondition ??= c;
+        case ToothSurface.distal:
+          distalCondition ??= c;
+        case ToothSurface.whole:
+          wholeCondition ??= c;
+      }
+    }
+
+    final topCondition = isUpper ? buccalCondition : lingualCondition;
+    final bottomCondition = isUpper ? lingualCondition : buccalCondition;
+    final leftCondition = isRightQuadrant ? distalCondition : mesialCondition;
+    final rightCondition = isRightQuadrant ? mesialCondition : distalCondition;
+    final centerCondition = occlusalCondition;
+
+    final centerRect = Rect.fromCenter(
+      center: Offset(w / 2, h / 2),
+      width: w * 0.44,
+      height: h * 0.44,
+    );
+
+    final defaultFill = colorScheme.surfaceContainerHighest.withValues(
+      alpha: 0.5,
+    );
+
+    // Top trapezoid
+    final topPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(w, 0)
+      ..lineTo(centerRect.right, centerRect.top)
+      ..lineTo(centerRect.left, centerRect.top)
+      ..close();
+    _drawSurface(canvas, topPath, topCondition, defaultFill);
+
+    // Bottom trapezoid
+    final bottomPath = Path()
+      ..moveTo(centerRect.left, centerRect.bottom)
+      ..lineTo(centerRect.right, centerRect.bottom)
+      ..lineTo(w, h)
+      ..lineTo(0, h)
+      ..close();
+    _drawSurface(canvas, bottomPath, bottomCondition, defaultFill);
+
+    // Left trapezoid
+    final leftPath = Path()
+      ..moveTo(0, 0)
+      ..lineTo(centerRect.left, centerRect.top)
+      ..lineTo(centerRect.left, centerRect.bottom)
+      ..lineTo(0, h)
+      ..close();
+    _drawSurface(canvas, leftPath, leftCondition, defaultFill);
+
+    // Right trapezoid
+    final rightPath = Path()
+      ..moveTo(w, 0)
+      ..lineTo(centerRect.right, centerRect.top)
+      ..lineTo(centerRect.right, centerRect.bottom)
+      ..lineTo(w, h)
+      ..close();
+    _drawSurface(canvas, rightPath, rightCondition, defaultFill);
+
+    // Center surface (Occlusal / Incisal)
+    final centerPath = Path()..addRect(centerRect);
+    _drawSurface(canvas, centerPath, centerCondition, defaultFill);
+
+    // Surface outlines
+    final borderPaint = Paint()
+      ..color = colorScheme.outlineVariant.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, w, h),
+        const Radius.circular(3),
+      ),
+      borderPaint,
+    );
+    canvas.drawLine(const Offset(0, 0), centerRect.topLeft, borderPaint);
+    canvas.drawLine(Offset(w, 0), centerRect.topRight, borderPaint);
+    canvas.drawLine(Offset(0, h), centerRect.bottomLeft, borderPaint);
+    canvas.drawLine(Offset(w, h), centerRect.bottomRight, borderPaint);
+    canvas.drawRect(centerRect, borderPaint);
+
+    // Whole tooth special indicators
+    if (wholeCondition != null) {
+      _drawWholeToothCondition(canvas, size, wholeCondition);
+    }
+  }
+
+  void _drawSurface(
+    Canvas canvas,
+    Path path,
+    ToothCondition? condition,
+    Color defaultFill,
+  ) {
+    final paint = Paint()..style = PaintingStyle.fill;
+    if (condition != null) {
+      paint.color = _conditionColor(
+        condition.type,
+        colorScheme,
+      ).withValues(alpha: 0.85);
+    } else {
+      paint.color = defaultFill;
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  void _drawWholeToothCondition(
+    Canvas canvas,
+    Size size,
+    ToothCondition condition,
+  ) {
+    final w = size.width;
+    final h = size.height;
+    switch (condition.type) {
+      case ToothConditionType.missing:
+        final crossPaint = Paint()
+          ..color = Colors.grey.shade600
+          ..strokeWidth = 2.5
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(const Offset(2, 2), Offset(w - 2, h - 2), crossPaint);
+        canvas.drawLine(Offset(w - 2, 2), Offset(2, h - 2), crossPaint);
+      case ToothConditionType.extractionRequired:
+        final crossPaint = Paint()
+          ..color = Colors.red.shade900
+          ..strokeWidth = 2.5
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(const Offset(2, 2), Offset(w - 2, h - 2), crossPaint);
+        canvas.drawLine(Offset(w - 2, 2), Offset(2, h - 2), crossPaint);
+      case ToothConditionType.crown:
+        final crownPaint = Paint()
+          ..color = Colors.amber.shade800
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(1, 1, w - 2, h - 2),
+            const Radius.circular(3),
+          ),
+          crownPaint,
+        );
+      case ToothConditionType.rootCanal:
+        final canalPaint = Paint()
+          ..color = Colors.deepPurple
+          ..strokeWidth = 3.0
+          ..strokeCap = StrokeCap.round;
+        canvas.drawLine(Offset(w / 2, 2), Offset(w / 2, h - 2), canalPaint);
+      case ToothConditionType.implant:
+        final implantPaint = Paint()
+          ..color = Colors.teal
+          ..strokeWidth = 2.0
+          ..style = PaintingStyle.stroke;
+        canvas.drawCircle(Offset(w / 2, h / 2), 6, implantPaint);
+      default:
+        final fillPaint = Paint()
+          ..color = _conditionColor(
+            condition.type,
+            colorScheme,
+          ).withValues(alpha: 0.35)
+          ..style = PaintingStyle.fill;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(0, 0, w, h),
+            const Radius.circular(3),
+          ),
+          fillPaint,
+        );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ToothSurfacePainter oldDelegate) =>
+      oldDelegate.toothNumber != toothNumber ||
+      oldDelegate.isUpper != isUpper ||
+      oldDelegate.conditions != conditions ||
+      oldDelegate.colorScheme != colorScheme;
+}
+
+class _SelectedToothPanel extends StatelessWidget {
+  const _SelectedToothPanel({
+    required this.toothNumber,
+    required this.conditions,
+    required this.canEdit,
+    required this.mutating,
+    required this.onResolve,
+    required this.onMarkInError,
+  });
+  final int? toothNumber;
+  final List<ToothCondition> conditions;
+  final bool canEdit;
+  final bool mutating;
+  final ValueChanged<ToothCondition> onResolve;
+  final ValueChanged<ToothCondition> onMarkInError;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    if (toothNumber == null) {
+      return _DentalChartMessage(l.selectToothReview);
+    }
+    if (conditions.isEmpty) {
+      return _DentalChartMessage(l.healthyToothMessage(toothNumber!));
+    }
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.toothNumberValue(toothNumber!),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            for (final condition in conditions)
+              _ConditionTile(
+                condition: condition,
+                canEdit: canEdit,
+                enabled: !mutating,
+                onResolve: () => onResolve(condition),
+                onMarkInError: () => onMarkInError(condition),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConditionTile extends StatelessWidget {
+  const _ConditionTile({
+    required this.condition,
+    required this.canEdit,
+    required this.enabled,
+    this.onResolve,
+    this.onMarkInError,
+  });
+  final ToothCondition condition;
+  final bool canEdit;
+  final bool enabled;
+  final VoidCallback? onResolve;
+  final VoidCallback? onMarkInError;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(
+        Icons.circle,
+        color: _conditionColor(condition.type, Theme.of(context).colorScheme),
+      ),
+      title: Text(
+        '${_conditionLabel(condition.type, l)} · ${_surfaceLabel(condition.surface, l)}',
+      ),
+      subtitle: condition.notes == null || condition.notes!.isEmpty
+          ? null
+          : Text(condition.notes!),
+      trailing: canEdit
+          ? PopupMenuButton<String>(
+              enabled: enabled,
+              onSelected: (action) {
+                if (action == 'resolve') onResolve?.call();
+                if (action == 'error') onMarkInError?.call();
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(value: 'resolve', child: Text(l.resolveLabel)),
+                PopupMenuItem(value: 'error', child: Text(l.markAsErrorLabel)),
+              ],
+            )
+          : null,
+    );
+  }
+}
+
+class _HistorySection extends StatelessWidget {
+  const _HistorySection({
+    required this.history,
+    required this.hasMore,
+    required this.loadingMore,
+    required this.onLoadMore,
+  });
+  final List<ToothCondition> history;
+  final bool hasMore;
+  final bool loadingMore;
+  final VoidCallback onLoadMore;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Card(
+      child: ExpansionTile(
+        title: Text(l.conditionHistoryTitle),
+        subtitle: Text(l.recordedItemsValue(history.length)),
+        children: [
+          if (history.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(l.noDentalHistory),
+            ),
+          for (final condition in history)
+            ListTile(
+              leading: Icon(
+                condition.status == ToothConditionStatus.active
+                    ? Icons.circle
+                    : condition.status == ToothConditionStatus.resolved
+                    ? Icons.check_circle_outline
+                    : Icons.error_outline,
+                color: _conditionColor(
+                  condition.type,
+                  Theme.of(context).colorScheme,
+                ),
+              ),
+              title: Text(
+                '${l.toothNumberValue(condition.toothNumber)} · ${_conditionLabel(condition.type, l)}',
+              ),
+              subtitle: Text(_historyDescription(condition, l)),
+            ),
+          if (hasMore)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: OutlinedButton(
+                onPressed: loadingMore ? null : onLoadMore,
+                child: loadingMore
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(l.loadMoreHistoryLabel),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DentalChartUnavailable extends StatelessWidget {
+  const _DentalChartUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Scaffold(
+      appBar: AppBar(title: Text(l.dentalChartTitle)),
+      body: _DentalChartMessage(l.dentalRoleRestricted),
+    );
+  }
+}
+
+class _DentalChartMessage extends StatelessWidget {
+  const _DentalChartMessage(this.message);
+  final String message;
+
+  @override
+  Widget build(BuildContext context) =>
+      Padding(padding: const EdgeInsets.all(16), child: Text(message));
+}
+
+Color _conditionColor(ToothConditionType? type, ColorScheme colors) =>
+    switch (type) {
+      ToothConditionType.caries => colors.error,
+      ToothConditionType.filling => Colors.blue,
+      ToothConditionType.crown => Colors.amber.shade800,
+      ToothConditionType.rootCanal => Colors.deepPurple,
+      ToothConditionType.fracture => Colors.orange.shade800,
+      ToothConditionType.missing => Colors.grey,
+      ToothConditionType.extractionRequired => Colors.red.shade900,
+      ToothConditionType.implant => Colors.teal,
+      null => colors.outline,
+    };
+
+String _historyDescription(ToothCondition condition, AppLocalizations l) {
+  final date = DateFormat.yMMMd().format(condition.createdAt.toLocal());
+  final status = _conditionStatusLabel(condition.status, l);
+  final reason = condition.errorReason;
+  return '${_surfaceLabel(condition.surface, l)} · $status · $date${reason == null ? '' : ' · $reason'}';
+}
+
+String _surfaceLabel(ToothSurface surface, AppLocalizations l) =>
+    switch (surface) {
+      ToothSurface.whole => l.surfaceWhole,
+      ToothSurface.mesial => l.surfaceMesial,
+      ToothSurface.distal => l.surfaceDistal,
+      ToothSurface.occlusal => l.surfaceOcclusal,
+      ToothSurface.buccal => l.surfaceBuccal,
+      ToothSurface.lingual => l.surfaceLingual,
+    };
+
+String _conditionLabel(ToothConditionType type, AppLocalizations l) =>
+    switch (type) {
+      ToothConditionType.caries => l.conditionCaries,
+      ToothConditionType.filling => l.conditionFilling,
+      ToothConditionType.crown => l.conditionCrown,
+      ToothConditionType.rootCanal => l.conditionRootCanal,
+      ToothConditionType.fracture => l.conditionFracture,
+      ToothConditionType.missing => l.conditionMissing,
+      ToothConditionType.extractionRequired => l.conditionExtraction,
+      ToothConditionType.implant => l.conditionImplant,
+    };
+
+String _conditionStatusLabel(ToothConditionStatus status, AppLocalizations l) =>
+    switch (status) {
+      ToothConditionStatus.active => l.conditionStatusActive,
+      ToothConditionStatus.resolved => l.conditionStatusResolved,
+      ToothConditionStatus.enteredInError => l.conditionStatusError,
+    };

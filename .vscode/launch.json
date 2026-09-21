@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "DentaFlow — Supabase (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "cwd": "${workspaceFolder}",
+      "deviceId": "chrome",
+      "flutterMode": "debug",
+      "toolArgs": ["--dart-define-from-file=config/staging.json"]
+    }
+  ]
+}

@@ -1,0 +1,758 @@
+{
+  "createStaffAccountLabel": "Create staff account",
+  "createStaffAccountHelp": "Enter the staff member's email and a temporary password (15–128 characters). Share the login details privately. They must change the password before accessing the clinic. No email will be sent.",
+  "temporaryPasswordLabel": "Temporary password",
+  "staffAccountCreated": "Staff account created. Share the login details privately. A password change is required at first sign-in.",
+  "staffAccountUnavailable": "Account could not be created. The email may already be registered, or account creation is temporarily unavailable. Existing accounts were not changed.",
+  "initialPasswordTitle": "Choose your own password",
+  "initialPasswordHelp": "Replace the temporary password with a different password of at least 15 characters. Clinic access stays locked until you finish. Then sign in again with your new password.",
+  "emailConfirmed": "Your email is verified. Sign in to continue.",
+  "invalidConfirmationLink": "This verification link is invalid or expired. Sign in to request a new link.",
+  "confirmationLinkSent": "Check your inbox and open the verification link, then return to sign in. Wait at least 60 seconds before resending.",
+  "resendLinkLabel": "Resend verification link",
+  "@@locale": "en",
+  "appTitle": "DentaFlow",
+  "demoLabel": "DEMO WORKSPACE",
+  "welcomeTitle": "Your clinic, organized.",
+  "welcomeBody": "A shared workspace for your dental clinic. Appointment and patient workflows are coming in the next development phases.",
+  "demoNotice": "Fictional data only. This preview is not ready for real patient records.",
+  "appearanceTitle": "Make yourself comfortable",
+  "themeLabel": "Appearance",
+  "languageLabel": "Language",
+  "systemLabel": "Use device settings",
+  "lightLabel": "Light",
+  "darkLabel": "Dark",
+  "englishLabel": "English",
+  "russianLabel": "Русский",
+  "arabicLabel": "العربية",
+  "storageWarning": "Your preferences could not be saved or restored. You can still use this preview.",
+  "notFoundTitle": "Page unavailable",
+  "notFoundBody": "This page is not available in the current preview.",
+  "backHome": "Back to workspace",
+  "startupTitle": "Unable to open the workspace",
+  "startupBody": "The application could not start. Check the development configuration and try again.",
+  "configurationBody": "The development configuration is invalid. Check the environment and public backend settings. Production is not enabled.",
+  "retryLabel": "Try again",
+  "networkFailure": "Connection unavailable. Please try again.",
+  "authenticationFailure": "Please sign in again to continue.",
+  "authorizationFailure": "You do not have permission for this action.",
+  "validationFailure": "Please check the information and try again.",
+  "serverFailure": "The service is temporarily unavailable. Please try again.",
+  "notFoundFailure": "The requested record is unavailable.",
+  "unknownFailure": "Something went wrong. Please try again.",
+  "loginTitle": "Sign in",
+  "registerTitle": "Create your account",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "confirmPasswordLabel": "Confirm password",
+  "signInLabel": "Sign in",
+  "registerLabel": "Create account",
+  "forgotLabel": "Forgot password?",
+  "verifyTitle": "Verify your email",
+  "codeLabel": "Verification code",
+  "verifyLabel": "Verify code",
+  "resendLabel": "Resend code",
+  "changeEmailLabel": "Change email",
+  "forgotTitle": "Recover your account",
+  "sendCodeLabel": "Send recovery code",
+  "sendResetLinkLabel": "Send reset link",
+  "recoveryLinkSent": "If this account exists, open the password-reset link in your email to choose a new password.",
+  "resetTitle": "Reset your password",
+  "resetLabel": "Save new password",
+  "lockedTitle": "Workspace locked",
+  "lockedBody": "Enter your password to unlock your account.",
+  "unlockLabel": "Unlock",
+  "switchAccountLabel": "Switch account",
+  "accountTitle": "Your account is ready",
+  "accountBody": "Clinic setup will be available in the next phase. Your account has no clinic role yet.",
+  "lockLabel": "Lock workspace",
+  "logoutLabel": "Sign out",
+  "backLoginLabel": "Back to sign in",
+  "passwordHelp": "Use at least 15 characters. Spaces and password managers are welcome.",
+  "emailInvalid": "Enter a valid email address.",
+  "requiredField": "This field is required.",
+  "passwordShort": "Use at least 15 characters.",
+  "passwordMismatch": "Passwords must match.",
+  "invalidCodeInput": "Enter the six-digit email code.",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "authCredentials": "The credentials could not be verified. Please try again.",
+  "authUnconfirmed": "Confirm your email before signing in.",
+  "authInvalidCode": "This code is invalid or expired. Request a new one.",
+  "authWeakPassword": "This password does not meet the server requirements.",
+  "authRateLimited": "Too many attempts. Please wait before trying again.",
+  "authStorage": "Session storage is unavailable. Access remains blocked; check browser or device storage settings.",
+  "authUnavailable": "Authentication is not configured. Open the configured development build.",
+  "authRevocation": "Signed out on this device. Server session revocation could not be confirmed.",
+  "authResetPartial": "Password changed, but revoking all sessions could not be confirmed. Sign in again; other sessions may still be active.",
+  "authResetDone": "Password changed. Please sign in again.",
+  "authCodeSent": "If this address is eligible, an email code has been sent. Check your inbox. Codes expire after one hour; wait at least 60 seconds before resending.",
+  "restoringTitle": "Checking your session",
+  "restoreFailedTitle": "Session could not be restored",
+  "privacyHidden": "Workspace hidden",
+  "authSettings": "Appearance and language",
+  "continueAuth": "Sign in or create an account"
+  ,"clinicSetupTitle": "Set up your clinic"
+  ,"clinicSetupBody": "Create your first clinic to begin using DentaFlow. You can create more clinics later."
+  ,"createClinicLabel": "Create clinic"
+  ,"clinicNameLabel": "Clinic name"
+  ,"clinicNameHelp": "Use the name staff and patients recognize."
+  ,"currencyLabel": "Currency"
+  ,"timeZoneLabel": "Time zone"
+  ,"timeZoneHelp": "Prefilled from this device. Change it if the clinic operates elsewhere."
+  ,"selectClinicTitle": "Choose a clinic"
+  ,"selectClinicBody": "Choose the clinic you want to work in. You can switch clinics later."
+  ,"currentClinicTitle": "Clinic selected"
+  ,"currentClinicBody": "Active workspace: {clinicName}. Select an action below or proceed directly to your dashboard."
+  ,"@currentClinicBody": {"placeholders": {"clinicName": {}}}
+  ,"switchClinicLabel": "Switch clinic"
+  ,"addClinicLabel": "Add another clinic"
+  ,"clinicLoadTitle": "Loading your clinics"
+  ,"clinicLoadFailed": "We could not load your clinics. Try again."
+  ,"timeZoneUtc": "UTC"
+  ,"visitsTitle": "Visits"
+  ,"newSessionLabel": "New session"
+  ,"noVisitsMessage": "No clinical visits yet."
+  ,"clinicalViewOnly": "You have view-only access to clinical sessions."
+  ,"linkedAppointmentLabel": "Linked appointment"
+  ,"walkInLabel": "Walk-in visit"
+  ,"draftStatus": "Draft"
+  ,"finalizedStatus": "Finalized"
+  ,"enteredInErrorStatus": "Entered in error"
+  ,"clinicalNotesLabel": "Clinical notes"
+  ,"recommendationsLabel": "Recommendations"
+  ,"saveDraftLabel": "Save draft"
+  ,"finalizeSessionLabel": "Finalize session"
+  ,"markInErrorLabel": "Mark entered in error"
+  ,"addAmendmentLabel": "Add amendment"
+  ,"amendmentsTitle": "Amendments"
+  ,"amendmentTextLabel": "Correction"
+  ,"reasonLabel": "Reason"
+  ,"selectVisitTypeTitle": "Create clinical session"
+  ,"chooseAppointmentLabel": "Choose appointment"
+  ,"chooseDentistLabel": "Choose dentist"
+  ,"visitDateTimeLabel": "Visit date and time"
+  ,"createDraftLabel": "Create draft"
+  ,"cancelLabel": "Cancel"
+  ,"loadMoreLabel": "Load more"
+  ,"reloadLatestLabel": "Reload latest draft"
+  ,"revisionConflictMessage": "Another staff member saved this draft. Reload the latest version before continuing."
+  ,"sessionUnavailableMessage": "This clinical session is unavailable."
+  ,"clinicalActionFailedMessage": "The clinical action could not be completed. Check the session and try again."
+  ,"finalizeWarning": "After finalization, the original clinical record cannot be edited. Corrections require a signed amendment."
+  ,"originalRecordTitle": "Original clinical record"
+  ,"appointmentSessionLabel": "Appointment visit"
+  ,"sessionDateLabel": "Session date"
+  ,"assignedDentistLabel": "Assigned dentist"
+  ,"lastSavedLabel": "Last saved"
+  ,"openClinicalSessionLabel": "Open clinical session"
+  ,"patientFilesTitle": "Patient files"
+  ,"uploadFileLabel": "Upload file"
+  ,"noPatientFilesMessage": "No patient files yet."
+  ,"patientFilesViewOnly": "You have view-only access to patient files."
+  ,"includeArchivedFilesLabel": "Show archived files"
+  ,"allFileCategoriesLabel": "All categories"
+  ,"fileCategoryLabel": "Category"
+  ,"fileCategoryXray": "X-ray"
+  ,"fileCategoryClinicalPhoto": "Clinical photo"
+  ,"fileCategoryConsent": "Consent"
+  ,"fileCategoryReferral": "Referral"
+  ,"fileCategoryLaboratory": "Laboratory result"
+  ,"fileCategoryOther": "Other"
+  ,"fileDescriptionLabel": "Description (optional)"
+  ,"chooseFileLabel": "Choose JPG, PNG, or PDF"
+  ,"fileTypeHelp": "Maximum 15 MB. Demo files only."
+  ,"fileSelectionInvalid": "Choose a valid JPG, PNG, or PDF file up to 15 MB."
+  ,"uploadingFileLabel": "Uploading file"
+  ,"validatingFileLabel": "Validating file securely…"
+  ,"cancelUploadLabel": "Cancel upload"
+  ,"openFileLabel": "Open file"
+  ,"openPdfLabel": "Open PDF"
+  ,"archiveFileLabel": "Archive file"
+  ,"restoreFileLabel": "Restore file"
+  ,"uploadReplacementLabel": "Upload replacement"
+  ,"archiveFileWarning": "The file will remain stored and auditable. Enter a reason to archive it."
+  ,"archivedFileLabel": "Archived"
+  ,"fileUnavailableMessage": "This patient file is unavailable."
+  ,"fileActionFailedMessage": "The file action could not be completed. Check the file and try again."
+  ,"fileSizeLabel": "Size"
+  ,"uploadedAtLabel": "Uploaded"
+  ,"fileLinkedVisitLabel": "Linked visit"
+  ,"patientFilesRestricted": "Patient files are restricted to authorized clinical staff."
+  ,"billingTitle": "Billing & invoices"
+  ,"newInvoiceLabel": "New invoice"
+  ,"noInvoicesMessage": "No invoices yet."
+  ,"billingRestricted": "Billing is available to authorized billing and clinical staff."
+  ,"invoiceDraftLabel": "Draft invoice"
+  ,"invoiceItemsTitle": "Invoice items"
+  ,"noInvoiceItemsMessage": "No procedures have been added."
+  ,"addCatalogueItemLabel": "Add from catalogue"
+  ,"addTreatmentItemLabel": "Add from treatment plan"
+  ,"quantityLabel": "Quantity"
+  ,"approveContentLabel": "Approve clinical content"
+  ,"reopenContentLabel": "Reopen clinical content"
+  ,"financialDetailsTitle": "Financial details"
+  ,"unitPriceLabel": "Unit price"
+  ,"discountTypeLabel": "Discount type"
+  ,"discountNoneLabel": "No discount"
+  ,"discountFixedLabel": "Fixed amount"
+  ,"discountPercentageLabel": "Percentage"
+  ,"discountValueLabel": "Discount value"
+  ,"taxRateLabel": "Tax rate (%)"
+  ,"invoiceLanguageLabel": "Invoice language"
+  ,"languageEnglishLabel": "English"
+  ,"languageRussianLabel": "Russian"
+  ,"languageArabicLabel": "Arabic"
+  ,"saveFinancialsLabel": "Save financial details"
+  ,"finalizeInvoiceLabel": "Finalize invoice"
+  ,"finalizeInvoiceWarning": "Finalization assigns a permanent invoice number. The invoice items and prices cannot be edited afterward."
+  ,"cancelInvoiceLabel": "Cancel invoice"
+  ,"recordPaymentLabel": "Record payment"
+  ,"paymentAmountLabel": "Amount received"
+  ,"paymentMethodLabel": "Payment method"
+  ,"paymentCashLabel": "Cash"
+  ,"paymentCardLabel": "Card"
+  ,"paymentBankLabel": "Bank transfer"
+  ,"paymentOtherLabel": "Other"
+  ,"referenceLabel": "Reference (optional)"
+  ,"patientCreditLabel": "Patient credit"
+  ,"applyCreditLabel": "Apply credit"
+  ,"paymentHistoryTitle": "Payments & corrections"
+  ,"refundLabel": "Refund"
+  ,"correctionLabel": "Correction"
+  ,"exportInvoiceLabel": "Open invoice PDF"
+  ,"invoiceSubtotalLabel": "Subtotal"
+  ,"invoiceDiscountLabel": "Discount"
+  ,"invoiceTaxLabel": "Tax"
+  ,"invoiceTotalLabel": "Total"
+  ,"invoicePaidLabel": "Paid"
+  ,"invoiceDueLabel": "Due"
+  ,"paymentUnpaidLabel": "Unpaid"
+  ,"paymentPartialLabel": "Partially paid"
+  ,"paymentPaidLabel": "Paid"
+  ,"invoiceCancelledLabel": "Cancelled"
+  ,"billingActionFailedMessage": "The billing action could not be completed. Reload the invoice and try again."
+  ,"billingConflictMessage": "This invoice changed or is no longer eligible for that action. Reload it and try again."
+  ,"invoicePdfUnavailableMessage": "The invoice PDF could not be prepared. Try again."
+  ,"dashboardTitle": "Dashboard"
+  ,"dashboardActivePatients": "Active patients"
+  ,"dashboardAppointmentsThisWeek": "Appointments this week"
+  ,"dashboardCompletedThisMonth": "Treatments completed this month"
+  ,"dashboardOutstandingPayments": "Outstanding payments"
+  ,"dashboardOutstandingInvoices": "{count} outstanding invoices"
+  ,"@dashboardOutstandingInvoices": {"placeholders":{"count":{"type":"int"}}}
+  ,"dashboardTodayAppointments": "Today's appointments"
+  ,"dashboardUpcomingAppointments": "Upcoming appointments"
+  ,"dashboardNextSevenDays": "Next seven days"
+  ,"dashboardNoTodayAppointments": "No appointments scheduled for today."
+  ,"dashboardNoUpcomingAppointments": "No upcoming appointments in the next seven days."
+  ,"dashboardViewAllAppointments": "View all appointments"
+  ,"dashboardLastUpdated": "Updated {value}"
+  ,"@dashboardLastUpdated": {"placeholders":{"value":{"type":"String"}}}
+  ,"dashboardTimeZone": "Clinic time · {value}"
+  ,"@dashboardTimeZone": {"placeholders":{"value":{"type":"String"}}}
+  ,"dashboardRefresh": "Refresh dashboard"
+  ,"dashboardRefreshFailed": "The latest dashboard data could not be loaded. Showing the previous result."
+  ,"dashboardUnavailable": "The dashboard is temporarily unavailable."
+  ,"dashboardNoActiveClinic": "Choose an active clinic to open its dashboard."
+  ,"dashboardOpenPatients": "Open patients"
+  ,"dashboardOpenTreatments": "Open treatments"
+  ,"dashboardOpenBilling": "Open billing"
+  ,"appointmentStatusScheduled": "Scheduled"
+  ,"appointmentStatusConfirmed": "Confirmed"
+  ,"appointmentStatusInProgress": "In progress"
+  ,"appointmentStatusCompleted": "Completed"
+  ,"appointmentStatusNoShow": "No-show"
+  ,"appointmentStatusCancelled": "Cancelled"
+  ,"auditTitle": "Audit log"
+  ,"auditOpen": "Open audit log"
+  ,"auditRefresh": "Refresh audit log"
+  ,"auditUnavailable": "The audit log is temporarily unavailable."
+  ,"auditOwnerOnly": "Only an active clinic owner can view the audit log."
+  ,"auditNoEvents": "No recorded activity in this date range."
+  ,"auditNoFilterResults": "No activity matches these filters."
+  ,"auditFilters": "Filters"
+  ,"auditClearFilters": "Clear filters"
+  ,"auditDateRange": "Date range"
+  ,"auditEmployee": "Employee"
+  ,"auditAllEmployees": "All employees"
+  ,"auditCategory": "Category"
+  ,"auditAllCategories": "All categories"
+  ,"auditEntityType": "Entity type"
+  ,"auditAllEntities": "All entities"
+  ,"auditLoadMore": "Load more"
+  ,"auditDetails": "Event details"
+  ,"auditOccurredAt": "Time"
+  ,"auditAction": "Action"
+  ,"auditEntity": "Entity"
+  ,"auditReason": "Reason"
+  ,"auditNoReason": "No reason recorded"
+  ,"auditActorRoles": "Roles at the time"
+  ,"auditFormerActor": "Former or unavailable staff member"
+  ,"auditCategoryAccess": "Access"
+  ,"auditCategoryPatient": "Patient administration"
+  ,"auditCategoryScheduling": "Scheduling"
+  ,"auditCategoryClinical": "Clinical"
+  ,"auditCategoryFinancial": "Financial"
+  ,"auditCategoryStaff": "Staff and security"
+  ,"auditOtherAction": "Other recorded action"
+  ,"auditOpenRecord": "Open related record"
+  ,"auditShowingRange": "{from} – {to} · {timeZone}"
+  ,"@auditShowingRange": {"placeholders":{"from":{"type":"String"},"to":{"type":"String"},"timeZone":{"type":"String"}}}
+  ,"auditRefreshFailed": "The latest audit activity could not be loaded. Showing the previous result."
+  ,"auditActionAccess": "Sensitive access recorded"
+  ,"auditActionPatient": "Patient administration changed"
+  ,"auditActionScheduling": "Schedule or appointment changed"
+  ,"auditActionClinical": "Clinical record changed"
+  ,"auditActionFinancial": "Financial record changed"
+  ,"auditActionStaff": "Staff or security changed"
+  ,"roleOwner": "Owner"
+  ,"roleDentist": "Dentist"
+  ,"roleAssistant": "Assistant"
+  ,"roleReceptionist": "Receptionist"
+  ,"auditResultCount": "Result count"
+  ,"auditApplyFilters": "Apply filters"
+  ,"appointmentsWithTimeZone": "Appointments · {timeZone}"
+  ,"@appointmentsWithTimeZone": {"placeholders":{"timeZone":{"type":"String"}}}
+  ,"previousWeekLabel": "Previous week"
+  ,"nextWeekLabel": "Next week"
+  ,"newAppointmentLabel": "New appointment"
+  ,"noAppointmentsWeek": "No appointments in this week."
+  ,"chooseClinicFirst": "Choose a clinic first."
+  ,"clinicTimeZoneValue": "Clinic time zone: {timeZone}"
+  ,"@clinicTimeZoneValue": {"placeholders":{"timeZone":{"type":"String"}}}
+  ,"findPatientLabel": "Find patient by name, phone, email, or number"
+  ,"patientSelectedValue": "Patient selected: {patientId}"
+  ,"@patientSelectedValue": {"placeholders":{"patientId":{"type":"String"}}}
+  ,"dentistLabel": "Dentist"
+  ,"chooseDentistValidation": "Choose a dentist"
+  ,"dateLabel": "Date"
+  ,"startTimeLabel": "Start time"
+  ,"durationLabel": "Duration"
+  ,"minutesValue": "{minutes} minutes"
+  ,"@minutesValue": {"placeholders":{"minutes":{"type":"int"}}}
+  ,"appointmentPurposeOptional": "Purpose (optional, non-clinical)"
+  ,"ownerOverrideOptional": "Owner override reason (only when needed)"
+  ,"createAppointmentLabel": "Create appointment"
+  ,"rescheduleLabel": "Reschedule"
+  ,"confirmLabel": "Confirm"
+  ,"startLabel": "Start"
+  ,"completeLabel": "Complete"
+  ,"markNoShowLabel": "Mark no-show"
+  ,"preparationNoteLabel": "Preparation note"
+  ,"ownerOverrideReasonTitle": "Owner override reason"
+  ,"overrideConflictHelp": "Only needed if the new time conflicts"
+  ,"continueLabel": "Continue"
+  ,"useReasonLabel": "Use reason"
+  ,"operationalPreparationNoteTitle": "Operational preparation note"
+  ,"saveLabel": "Save"
+  ,"cancellationReasonTitle": "Cancellation reason"
+  ,"appointmentUnavailableIssue": "The patient or appointment is unavailable."
+  ,"appointmentForbiddenIssue": "Your role cannot perform this appointment action."
+  ,"appointmentPatientOverlapIssue": "This patient already has an overlapping appointment."
+  ,"appointmentDentistOverlapIssue": "The dentist already has an overlapping appointment."
+  ,"appointmentWorkingHoursIssue": "This time is outside the dentist working hours."
+  ,"appointmentLeaveIssue": "The dentist is on leave at this time."
+  ,"appointmentUnavailablePeriodIssue": "The dentist is unavailable at this time."
+  ,"appointmentOverrideRequiredIssue": "An Owner must add a reason to override this conflict."
+  ,"appointmentInvalidTransitionIssue": "This appointment status cannot be changed that way."
+  ,"patientsTitle": "Patients"
+  ,"newPatientLabel": "New patient"
+  ,"searchPatientLabel": "Search name, phone, email, or number"
+  ,"archivedLabel": "Archived"
+  ,"patientActionUnavailable": "This patient action is not available."
+  ,"noPatientsFound": "No patients found."
+  ,"noContactLabel": "No contact"
+  ,"firstNameLabel": "First name"
+  ,"lastNameLabel": "Last name"
+  ,"phoneLabel": "Phone"
+  ,"birthDateInformationLabel": "Birth date information"
+  ,"birthPrecisionUnknown": "Unknown"
+  ,"birthPrecisionExact": "Exact"
+  ,"birthPrecisionApproximate": "Approximate"
+  ,"birthDateFormatLabel": "Birth date (YYYY-MM-DD)"
+  ,"approximateAgeLabel": "Approximate age in years"
+  ,"ageAssessedOnLabel": "Age assessed on (YYYY-MM-DD)"
+  ,"knownMinorLabel": "Patient is known to be under 18"
+  ,"guardianNameLabel": "Guardian name"
+  ,"guardianPhoneLabel": "Guardian phone"
+  ,"guardianEmailLabel": "Guardian email"
+  ,"createPatientLabel": "Create patient"
+  ,"patientProfileTitle": "Patient profile"
+  ,"patientProfileUnavailable": "Patient profile is unavailable. Return to search and select the patient again."
+  ,"contactTitle": "Contact"
+  ,"medicalProfileTitle": "Medical profile"
+  ,"appointmentsTitle": "Appointments"
+  ,"dentalChartTitle": "Dental Chart"
+  ,"treatmentPlansTitle": "Treatment plans"
+  ,"restorePatientLabel": "Restore patient"
+  ,"archivePatientLabel": "Archive patient"
+  ,"birthInformationTitle": "Birth information"
+  ,"approximatelyYearsValue": "Approximately {years} years"
+  ,"@approximatelyYearsValue": {"placeholders":{"years":{"type":"int"}}}
+  ,"archivePatientQuestion": "Archive patient?"
+  ,"restorePatientQuestion": "Restore patient?"
+  ,"archivePatientExplanation": "Archived patients remain in the clinic record and can be restored by an owner."
+  ,"restorePatientExplanation": "This returns the patient to the active clinic record."
+  ,"archiveLabel": "Archive"
+  ,"restoreLabel": "Restore"
+  ,"medicalRoleRestricted": "Medical information is not available for your role."
+  ,"allergiesLabel": "Allergies"
+  ,"currentMedicationsLabel": "Current medications"
+  ,"chronicConditionsLabel": "Chronic conditions"
+  ,"importantMedicalNotesLabel": "Important medical notes"
+  ,"saveMedicalProfileLabel": "Save medical profile"
+  ,"staffTitle": "Staff"
+  ,"backLabel": "Back"
+  ,"inviteStaffLabel": "Invite staff"
+  ,"staffOwnerOnly": "Only clinic owners can manage staff."
+  ,"manageStaffDescription": "Manage roles and access for this clinic."
+  ,"webInvitationOnly": "Send invitations from the Web workspace."
+  ,"verifiedEmailLabel": "Verified email"
+  ,"sendInvitationLabel": "Send invitation"
+  ,"saveRolesLabel": "Save roles"
+  ,"reactivateStaffQuestion": "Reactivate staff member?"
+  ,"deactivateStaffQuestion": "Deactivate staff member?"
+  ,"reactivateLabel": "Reactivate"
+  ,"deactivateLabel": "Deactivate"
+  ,"confirmPasswordTitle": "Confirm your password"
+  ,"invalidInvitationLink": "This invitation link is invalid or unavailable."
+  ,"joinClinicTitle": "Join clinic"
+  ,"acceptInvitationHelp": "Accept this invitation only if you signed in with the email address it was sent to."
+  ,"acceptInvitationLabel": "Accept invitation"
+  ,"staffCountTitle": "Staff ({count})"
+  ,"@staffCountTitle": {"placeholders":{"count":{"type":"int"}}}
+  ,"inactiveLabel": "Inactive"
+  ,"editRolesLabel": "Edit roles"
+  ,"invitationCountTitle": "Invitations ({count})"
+  ,"@invitationCountTitle": {"placeholders":{"count":{"type":"int"}}}
+  ,"resendInvitationLabel": "Resend"
+  ,"revokeInvitationLabel": "Revoke"
+  ,"invitationPending": "Pending"
+  ,"invitationAccepted": "Accepted"
+  ,"invitationRevoked": "Revoked"
+  ,"invitationExpired": "Expired"
+  ,"staffInvalidInputIssue": "Check the information and try again."
+  ,"ownerPasswordRequiredIssue": "Confirm your password to continue."
+  ,"invitationUnavailableIssue": "This invitation is unavailable."
+  ,"staffMemberUnavailableIssue": "This staff member is unavailable."
+  ,"doctorScheduleTitle": "Doctor schedule"
+  ,"scheduleChooseClinic": "Choose a clinic before viewing schedules."
+  ,"clinicTimeZoneExplanation": "All times use the clinic time zone: {timeZone}."
+  ,"@clinicTimeZoneExplanation": {"placeholders":{"timeZone":{"type":"String"}}}
+  ,"setWeeklyHoursLabel": "Set weekly hours"
+  ,"addUnavailableTimeLabel": "Add leave or unavailable time"
+  ,"weeklyHoursTitle": "Weekly hours"
+  ,"noWeeklyHours": "No weekly hours have been set for this dentist."
+  ,"unavailablePeriodsTitle": "Leave and unavailable periods"
+  ,"noUnavailablePeriods": "No leave or unavailable periods are recorded."
+  ,"leaveLabel": "Leave"
+  ,"unavailableLabel": "Unavailable"
+  ,"removeLabel": "Remove"
+  ,"scheduleConflictOwnerReview": "This change conflicts with {count} future appointment(s). An Owner must review it."
+  ,"@scheduleConflictOwnerReview": {"placeholders":{"count":{"type":"int"}}}
+  ,"weekdayNumberHelp": "Use 1 for Monday through 7 for Sunday."
+  ,"workingDaysLabel": "Working days"
+  ,"startTimeFormatLabel": "Start time (HH:MM)"
+  ,"endTimeFormatLabel": "End time (HH:MM)"
+  ,"breakStartOptional": "Break start (optional)"
+  ,"breakEndOptional": "Break end (optional)"
+  ,"effectiveFromFormatLabel": "Effective from (YYYY-MM-DD)"
+  ,"addUnavailableTimeTitle": "Add unavailable time"
+  ,"typeLabel": "Type"
+  ,"startsLabel": "Starts"
+  ,"endsLabel": "Ends"
+  ,"reasonOptionalLabel": "Reason (optional)"
+  ,"effectiveFromValue": "Effective from {date}"
+  ,"@effectiveFromValue": {"placeholders":{"date":{"type":"String"}}}
+  ,"noWorkingHours": "No working hours"
+  ,"breakLabel": "break"
+  ,"reviewAffectedAppointmentsTitle": "Review affected appointments"
+  ,"affectedAppointmentsExplanation": "This change conflicts with {count} future appointment(s). They will remain booked and be flagged for manual resolution."
+  ,"@affectedAppointmentsExplanation": {"placeholders":{"count":{"type":"int"}}}
+  ,"ownerConfirmationReasonLabel": "Owner confirmation reason"
+  ,"cancelChangeLabel": "Cancel change"
+  ,"confirmAndFlagLabel": "Confirm and flag"
+  ,"weekdayMon": "Mon"
+  ,"weekdayTue": "Tue"
+  ,"weekdayWed": "Wed"
+  ,"weekdayThu": "Thu"
+  ,"weekdayFri": "Fri"
+  ,"weekdaySat": "Sat"
+  ,"weekdaySun": "Sun"
+  ,"scheduleEditForbiddenIssue": "You cannot change this dentist schedule."
+  ,"activeDentistRequiredIssue": "This staff member is not an active dentist."
+  ,"effectiveDateInvalidIssue": "Choose a future clinic date."
+  ,"exceptionUnavailableIssue": "This unavailable period is no longer available."
+  ,"affectedAppointmentsIssue": "This schedule change affects future appointments and requires Owner review."
+  ,"scheduleSavedMessage": "Weekly hours saved."
+  ,"scheduleInvalidInputMessage": "Check the working days, times, break, and effective date."
+  ,"scheduleForLabel": "Schedule for"
+  ,"scheduleActiveLabel": "Active schedule"
+  ,"scheduleUpcomingLabel": "Upcoming schedule"
+  ,"scheduleHistoryLabel": "Schedule history"
+  ,"scheduleHistoryHelp": "Previous and superseded working-hour versions"
+  ,"editWeeklyHoursLabel": "Edit weekly schedule"
+  ,"selectWorkingDaysHelp": "Select the days this dentist works."
+  ,"includeBreakLabel": "Include a break"
+  ,"effectiveDateLabel": "Effective date"
+  ,"closedLabel": "Closed"
+  ,"scheduleSummaryLabel": "Schedule summary"
+  ,"procedureCatalogueTitle": "Procedure catalogue"
+  ,"backToClinicLabel": "Back to clinic"
+  ,"newProcedureLabel": "New procedure"
+  ,"editProcedureLabel": "Edit procedure"
+  ,"procedureCatalogueOwnerHelp": "Create the services dentists can add to treatment plans."
+  ,"procedureCatalogueViewerHelp": "Available clinic procedures and standard prices."
+  ,"noProceduresCatalogue": "No procedures yet. An owner can add the first procedure."
+  ,"editLabel": "Edit"
+  ,"activateLabel": "Activate"
+  ,"activeLabel": "Active"
+  ,"nameLabel": "Name"
+  ,"categoryLabel": "Category"
+  ,"standardPriceLabel": "Standard price"
+  ,"durationMinutesLabel": "Duration in minutes"
+  ,"validPriceValidation": "Enter a valid price."
+  ,"durationRangeValidation": "Use 5 to 720 minutes."
+  ,"treatmentPlansUnavailable": "Treatment plans are unavailable. Return to the patient list and select the patient again."
+  ,"noActiveDentist": "No active dentist membership is available."
+  ,"newPlanLabel": "New plan"
+  ,"treatmentViewOnly": "Your role has view-only access to treatment plans."
+  ,"noTreatmentPlan": "No treatment plan yet. A dentist can prepare a draft plan."
+  ,"newTreatmentPlanTitle": "New treatment plan"
+  ,"leadDentistLabel": "Lead dentist"
+  ,"planNotesOptional": "Plan notes (optional)"
+  ,"editPlanNotesTitle": "Edit plan notes"
+  ,"notesLabel": "Notes"
+  ,"ownerAddProcedureFirst": "The clinic owner must add an active procedure first."
+  ,"addProcedureLabel": "Add procedure"
+  ,"procedureLabel": "Procedure"
+  ,"fdiToothOptional": "FDI tooth number (optional)"
+  ,"validFdiValidation": "Enter a valid FDI tooth number."
+  ,"estimatedPriceLabel": "Estimated price"
+  ,"assignedDentistOptional": "Assigned dentist (optional)"
+  ,"notAssignedLabel": "Not assigned"
+  ,"clinicalDescriptionOptional": "Clinical description (optional)"
+  ,"saveProcedureLabel": "Save procedure"
+  ,"planTransitionQuestion": "{status} treatment plan?"
+  ,"@planTransitionQuestion": {"placeholders":{"status":{"type":"String"}}}
+  ,"activatePlanExplanation": "This makes the plan the patient’s active treatment plan."
+  ,"finalPlanTransitionExplanation": "This status change is recorded and cannot be reversed."
+  ,"plansTitle": "Plans"
+  ,"procedureCountValue": "{count} procedures"
+  ,"@procedureCountValue": {"placeholders":{"count":{"type":"int"}}}
+  ,"editNotesLabel": "Edit notes"
+  ,"activatePlanLabel": "Activate plan"
+  ,"cancelPlanLabel": "Cancel plan"
+  ,"completePlanLabel": "Complete plan"
+  ,"planHasNoProcedures": "This plan has no procedures yet."
+  ,"unavailableProcedure": "Unavailable procedure"
+  ,"toothNumberValue": "Tooth {number}"
+  ,"@toothNumberValue": {"placeholders":{"number":{"type":"int"}}}
+  ,"dentistValue": "Dentist: {email}"
+  ,"@dentistValue": {"placeholders":{"email":{"type":"String"}}}
+  ,"changeStatusLabel": "Change status"
+  ,"planStatusDraft": "Draft"
+  ,"planStatusActive": "Active"
+  ,"planStatusCompleted": "Completed"
+  ,"planStatusCancelled": "Cancelled"
+  ,"itemStatusPlanned": "Planned"
+  ,"itemStatusApproved": "Approved"
+  ,"itemStatusInProgress": "In progress"
+  ,"itemStatusCompleted": "Completed"
+  ,"itemStatusCancelled": "Cancelled"
+  ,"treatmentForbiddenIssue": "Your clinic role cannot make this change."
+  ,"treatmentUnavailableIssue": "This record is no longer available."
+  ,"treatmentInvalidInputIssue": "Check the entered information and try again."
+  ,"treatmentDraftOnlyIssue": "Only a draft treatment plan can be edited."
+  ,"treatmentActiveRequiredIssue": "The treatment plan must be active for this change."
+  ,"treatmentItemsRequiredIssue": "Add at least one procedure before activating the plan."
+  ,"activePlanExistsIssue": "This patient already has an active treatment plan."
+  ,"treatmentInvalidTransitionIssue": "That status change is not allowed."
+  ,"dentalChartUnavailable": "Dental Chart is unavailable. Return to the patient list and select the patient again."
+  ,"backToPatientProfile": "Back to patient profile"
+  ,"permanentTeethLabel": "Permanent teeth"
+  ,"primaryTeethLabel": "Primary teeth"
+  ,"selectToothToAdd": "Select a tooth to add a condition"
+  ,"addConditionToTooth": "Add condition to tooth {number}"
+  ,"@addConditionToTooth": {"placeholders":{"number":{"type":"int"}}}
+  ,"selectToothFirst": "Select a tooth first."
+  ,"addConditionTitle": "Add condition — tooth {number}"
+  ,"@addConditionTitle": {"placeholders":{"number":{"type":"int"}}}
+  ,"conditionLabel": "Condition"
+  ,"surfaceLabel": "Surface"
+  ,"clinicalNoteOptional": "Clinical note (optional)"
+  ,"saveConditionLabel": "Save condition"
+  ,"resolveConditionQuestion": "Resolve condition?"
+  ,"resolveConditionExplanation": "{condition} on tooth {number} will remain in the patient history."
+  ,"@resolveConditionExplanation": {"placeholders":{"condition":{"type":"String"},"number":{"type":"int"}}}
+  ,"resolveLabel": "Resolve"
+  ,"markEntryErrorTitle": "Mark entry as error"
+  ,"entryErrorReasonLabel": "Why is this entry incorrect?"
+  ,"preserveAsErrorLabel": "Preserve as error"
+  ,"selectToothReview": "Select a tooth to review its active conditions."
+  ,"healthyToothMessage": "Tooth {number} is healthy. No active condition is recorded."
+  ,"@healthyToothMessage": {"placeholders":{"number":{"type":"int"}}}
+  ,"toothHealthySemantics": "Tooth {number}, healthy"
+  ,"@toothHealthySemantics": {"placeholders":{"number":{"type":"int"}}}
+  ,"toothConditionsSemantics": "Tooth {number}, {count} active conditions"
+  ,"@toothConditionsSemantics": {"placeholders":{"number":{"type":"int"},"count":{"type":"int"}}}
+  ,"markAsErrorLabel": "Mark as error"
+  ,"conditionHistoryTitle": "Condition history"
+  ,"recordedItemsValue": "{count} recorded items"
+  ,"@recordedItemsValue": {"placeholders":{"count":{"type":"int"}}}
+  ,"noDentalHistory": "No Dental Chart history has been recorded."
+  ,"loadMoreHistoryLabel": "Load more history"
+  ,"dentalRoleRestricted": "Dental Chart clinical details are not available for your role."
+  ,"surfaceWhole": "Whole tooth"
+  ,"surfaceMesial": "Mesial"
+  ,"surfaceDistal": "Distal"
+  ,"surfaceOcclusal": "Occlusal"
+  ,"surfaceBuccal": "Buccal"
+  ,"surfaceLingual": "Lingual"
+  ,"conditionCaries": "Caries"
+  ,"conditionFilling": "Filling"
+  ,"conditionCrown": "Crown"
+  ,"conditionRootCanal": "Root canal"
+  ,"conditionFracture": "Fracture"
+  ,"conditionMissing": "Missing"
+  ,"conditionExtraction": "Extraction required"
+  ,"conditionImplant": "Implant"
+  ,"conditionStatusActive": "Active"
+  ,"conditionStatusResolved": "Resolved"
+  ,"conditionStatusError": "Entered in error"
+  ,"odontogramForbiddenIssue": "Your role cannot change Dental Chart conditions."
+  ,"odontogramUnavailableIssue": "This patient or condition is no longer available."
+  ,"odontogramInvalidInputIssue": "Check the tooth, surface, and condition details."
+  ,"missingToothConflictIssue": "Resolve or correct the existing natural-tooth condition before recording this tooth as missing."
+  ,"duplicateConditionIssue": "This active condition is already recorded for the selected tooth surface."
+  ,"conditionNotActiveIssue": "This condition is already closed and remains in history."
+  ,"validAmountValidation": "Enter a valid amount."
+  ,"quantityRangeValidation": "Enter a quantity from 0.01 to 999.99."
+  ,"settingsTitle": "Settings"
+  ,"moreLabel": "More"
+  ,"workspaceNavigationLabel": "Workspace navigation"
+  ,"themeSystemLabel": "System theme"
+  ,"languageSystemLabel": "System language"
+  ,"clinicSectionTitle": "Clinic"
+  ,"privacySectionTitle": "Privacy"
+  ,"accountSectionTitle": "Account"
+  ,"applicationSectionTitle": "Application"
+  ,"developmentMvpLabel": "Development MVP · fictional data only"
+  ,"currentRoleLabel": "Your role"
+  ,"patientNumberLabel": "Patient number"
+  ,"patientNameLabel": "Patient"
+  ,"statusLabel": "Status"
+  ,"activeLabel": "Active"
+  ,"todayLabel": "Today"
+  ,"noAppointmentsDay": "No appointments scheduled for this day."
+  ,"dentitionLabel": "Dentition"
+  ,"quadrantUpperRight": "Upper Right (UR)"
+  ,"quadrantUpperLeft": "Upper Left (UL)"
+  ,"quadrantLowerRight": "Lower Right (LR)"
+  ,"quadrantLowerLeft": "Lower Left (LL)"
+  ,"dentalMidline": "Midline"
+  ,"maxillaUpperJaw": "Upper Jaw (Maxilla)"
+  ,"mandibleLowerJaw": "Lower Jaw (Mandible)"
+  ,"visitReasonLabel": "Reason for visit"
+  ,"quickReasonCheckup": "Routine Checkup"
+  ,"quickReasonCleaning": "Cleaning / Scaling"
+  ,"quickReasonToothache": "Toothache / Emergency"
+  ,"quickReasonConsultation": "Consultation"
+  ,"quickReasonFollowUp": "Follow-up"
+  ,"doctorWorkingHours": "Working hours: {hours}"
+  ,"@doctorWorkingHours": {"placeholders": {"hours": {"type": "String"}}}
+  ,"doctorOffDuty": "Doctor has no scheduled hours on this day"
+  ,"doctorOnLeave": "Doctor is on leave on this date"
+  ,"changePatientLabel": "Change patient"
+  ,"overrideScheduleQuestion": "Override doctor schedule conflict (Owner only)"
+  ,"selectedPatientCardTitle": "Selected patient"
+  ,"doctorNoScheduleConfigured": "Doctor has no working schedule configured in this clinic"
+  ,"timeOutsideWorkingHours": "Selected time ({time}) is outside doctor's working hours ({hours})"
+  ,"@timeOutsideWorkingHours": {"placeholders": {"time": {"type": "String"}, "hours": {"type": "String"}}}
+  ,"appointmentConflictExplanation": "This appointment conflicts with the doctor's schedule (off-duty, on leave, or outside working hours). As clinic owner, please enter an override reason above to confirm."
+  ,"middleNameLabel": "Middle / Father's name"
+  ,"administrativeNotesLabel": "Administrative / Clinic notes"
+  ,"personalInformationSection": "Personal Information"
+  ,"contactInformationSection": "Contact Information"
+  ,"birthAndAgeSection": "Birth Date & Age"
+  ,"selectBirthDateLabel": "Select birth date"
+  ,"guardianInformationSection": "Parent / Guardian Contact (Minor)"
+  ,"newPatientShortcut": "+ Register New Patient"
+  ,"yearsOldValue": "{age} years old"
+  ,"@yearsOldValue": {"placeholders": {"age": {"type": "int"}}}
+  ,"ageInYearsLabel": "Age in years"
+  ,"clinicalHubTitle": "Clinical Records & Treatment"
+  ,"administrativeHubTitle": "Administration & Appointments"
+  ,"bookAppointmentLabel": "Book Appointment"
+  ,"minorBadge": "Minor"
+  ,"copiedToClipboard": "Copied to clipboard"
+  ,"copyLabel": "Copy"
+  ,"durationMinutes": "{minutes} min"
+  ,"@durationMinutes": {"placeholders": {"minutes": {"type": "int"}}}
+  ,"appointmentsCount": "{count, plural, =0{No appointments} =1{1 appointment} other{{count} appointments}}"
+  ,"@appointmentsCount": {"placeholders": {"count": {"type": "int"}}}
+  ,"viewProfileLabel": "Profile"
+  ,"preparationNoteBadge": "Prep Note"
+  ,"overrideBadge": "Override"
+  ,"emptyCalendarTitle": "No appointments scheduled"
+  ,"emptyCalendarHelp": "Use the button below or switch dates to view or schedule appointments."
+  ,"medicalAlertsTitle": "Medical & Allergy Alerts"
+  ,"noKnownAllergies": "No known drug allergies or medical alerts"
+  ,"unscreenedMedicalHelp": "No medical history recorded yet. Complete medical screening before clinical procedures."
+  ,"screenMedicalLabel": "Screen medical history"
+  ,"whatsAppLabel": "WhatsApp"
+  ,"callLabel": "Call"
+  ,"emailActionLabel": "Send email"
+  ,"sendWhatsAppReminder": "WhatsApp reminder"
+  ,"reminderMessageTemplate": "Hello {patientName}, this is a reminder from {clinicName}. You have a dental appointment with Dr. {dentistName} on {date} at {time}. Please reply to this message to confirm your appointment. Thank you!"
+  ,"@reminderMessageTemplate": {
+    "placeholders": {
+      "patientName": {"type": "String"},
+      "clinicName": {"type": "String"},
+      "dentistName": {"type": "String"},
+      "date": {"type": "String"},
+      "time": {"type": "String"}
+    }
+  }
+  ,"noPhoneForPatient": "No phone number registered for this patient."
+  ,"communicationLaunchFailed": "Could not launch application."
+  ,"loadStandardProcedures": "Load standard procedures"
+  ,"loadStandardProceduresHelp": "Quickly add standard dental procedures to your catalogue."
+  ,"loadStandardProceduresConfirm": "This will add {count} standard dental procedures to your clinic catalogue. You can customize prices and durations anytime. Continue?"
+  ,"@loadStandardProceduresConfirm": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
+  ,"searchProceduresPlaceholder": "Search procedures or categories..."
+  ,"allCategoriesLabel": "All categories"
+  ,"activeOnlyFilter": "Active only"
+  ,"totalProceduresCount": "{count, plural, =1{1 procedure} other{{count} procedures}}"
+  ,"@totalProceduresCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
+  ,"activeProceduresCount": "{count} active"
+  ,"@activeProceduresCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
+  ,"categoriesCount": "{count} categories"
+  ,"@categoriesCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
+  ,"standardProceduresImported": "Successfully imported {count} standard procedures."
+  ,"@standardProceduresImported": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
+  ,"noMatchingProcedures": "No procedures match your search or filter."
+  ,"clearFiltersLabel": "Clear filters"
+}
+
