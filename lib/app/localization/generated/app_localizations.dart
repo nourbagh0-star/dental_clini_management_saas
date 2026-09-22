@@ -4281,6 +4281,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select Procedure from Catalogue'**
   String get selectProcedureToAdd;
+
+  /// No description provided for @quickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Actions'**
+  String get quickActions;
+
+  /// No description provided for @quickNewAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'New Appointment'**
+  String get quickNewAppointment;
+
+  /// No description provided for @quickNewPatient.
+  ///
+  /// In en, this message translates to:
+  /// **'New Patient'**
+  String get quickNewPatient;
+
+  /// No description provided for @inChairPatient.
+  ///
+  /// In en, this message translates to:
+  /// **'In The Dental Chair'**
+  String get inChairPatient;
+
+  /// No description provided for @nextPatient.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Patient Today'**
+  String get nextPatient;
+
+  /// No description provided for @openClinicalSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Clinical Session'**
+  String get openClinicalSession;
+
+  /// No description provided for @jawViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Both Jaws'**
+  String get jawViewAll;
+
+  /// No description provided for @jawViewUpper.
+  ///
+  /// In en, this message translates to:
+  /// **'Upper Jaw (Maxilla)'**
+  String get jawViewUpper;
+
+  /// No description provided for @jawViewLower.
+  ///
+  /// In en, this message translates to:
+  /// **'Lower Jaw (Mandible)'**
+  String get jawViewLower;
+
+  /// No description provided for @callPatient.
+  ///
+  /// In en, this message translates to:
+  /// **'Call Patient'**
+  String get callPatient;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get filterScheduled;
+
+  /// No description provided for @filterConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get filterConfirmed;
+
+  /// No description provided for @filterInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In Progress'**
+  String get filterInProgress;
+
+  /// No description provided for @filterCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get filterCompleted;
+
+  /// No description provided for @quickToothActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Tooth Actions'**
+  String get quickToothActions;
 }
 
 class _AppLocalizationsDelegate

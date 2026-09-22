@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -222,6 +224,18 @@ class _DashboardContent extends StatelessWidget {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final location = tz.getLocation(snapshot.clinicTimeZone);
     final generated = tz.TZDateTime.from(snapshot.generatedAt, location);
+    final inProgressAppt = snapshot.todayAppointments.items
+        .where((a) => a.status == AppointmentStatus.inProgress)
+        .firstOrNull;
+    final nextUpcomingAppt = inProgressAppt != null
+        ? null
+        : snapshot.todayAppointments.items
+            .where((a) =>
+                a.status == AppointmentStatus.scheduled ||
+                a.status == AppointmentStatus.confirmed)
+            .firstOrNull;
+    final featuredAppt = inProgressAppt ?? nextUpcomingAppt;
+    final isInChair = inProgressAppt != null;
     return RefreshIndicator(
       onRefresh: context.read<DashboardCubit>().refresh,
       child: ListView(
@@ -255,6 +269,14 @@ class _DashboardContent extends StatelessWidget {
                     const SizedBox(height: AppSpacing.small),
                     const LinearProgressIndicator(),
                   ],
+                  if (featuredAppt != null) ...[
+                    const SizedBox(height: AppSpacing.large),
+                    _InChairOrNextHeroCard(
+                      appointment: featuredAppt,
+                      timeZone: snapshot.clinicTimeZone,
+                      isInChair: isInChair,
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.large),
                   _MetricGrid(snapshot: snapshot),
                   const SizedBox(height: AppSpacing.large),
@@ -271,6 +293,7 @@ class _DashboardContent extends StatelessWidget {
                         section: snapshot.todayAppointments,
                         timeZone: snapshot.clinicTimeZone,
                         emptyMessage: l10n.dashboardNoTodayAppointments,
+                        enableFilter: true,
                       );
                       final upcoming = _AppointmentPanel(
                         title: l10n.dashboardUpcomingAppointments,
@@ -446,13 +469,173 @@ class _MetricCard extends StatelessWidget {
   );
 }
 
-class _AppointmentPanel extends StatelessWidget {
+class _InChairOrNextHeroCard extends StatelessWidget {
+  const _InChairOrNextHeroCard({
+    required this.appointment,
+    required this.timeZone,
+    required this.isInChair,
+  });
+
+  final DashboardAppointmentPreview appointment;
+  final String timeZone;
+  final bool isInChair;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final local = tz.TZDateTime.from(
+      appointment.startsAt,
+      tz.getLocation(timeZone),
+    );
+    final initial = appointment.patientName.trim().isNotEmpty
+        ? appointment.patientName.trim().characters.first.toUpperCase()
+        : '?';
+
+    final borderColor = isInChair
+        ? theme.colorScheme.primary
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.6);
+    final bgColor = isInChair
+        ? theme.colorScheme.primaryContainer.withValues(alpha: 0.15)
+        : theme.colorScheme.surfaceContainerLow;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: isInChair ? 1.5 : 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.medium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isInChair
+                        ? const Color(0xFFFFF3E0)
+                        : theme.colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isInChair
+                            ? Icons.play_circle_filled_rounded
+                            : Icons.schedule_rounded,
+                        size: 16,
+                        color: isInChair
+                            ? const Color(0xFFE65100)
+                            : theme.colorScheme.primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isInChair ? l10n.inChairPatient : l10n.nextPatient,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isInChair
+                              ? const Color(0xFFE65100)
+                              : theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  DateFormat.jm(locale).format(local),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  foregroundColor: theme.colorScheme.onPrimaryContainer,
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        appointment.patientName,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '#${appointment.patientNumber} · ${appointment.dentistLabel}',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (isInChair)
+                  FilledButton.icon(
+                    onPressed: () {
+                      unawaited(HapticFeedback.lightImpact());
+                      context.go(
+                        '/patients/${appointment.patientId}/visits?appointmentId=${appointment.id}',
+                      );
+                    },
+                    icon: const Icon(Icons.medical_services_outlined, size: 18),
+                    label: Text(l10n.openClinicalSession),
+                  ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    unawaited(HapticFeedback.lightImpact());
+                    context.go('/patients/${appointment.patientId}');
+                  },
+                  icon: const Icon(Icons.person_outline_rounded, size: 18),
+                  label: Text(l10n.patientProfileTitle),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AppointmentPanel extends StatefulWidget {
   const _AppointmentPanel({
     required this.title,
     required this.subtitle,
     required this.section,
     required this.timeZone,
     required this.emptyMessage,
+    this.enableFilter = false,
   });
 
   final String title;
@@ -460,28 +643,92 @@ class _AppointmentPanel extends StatelessWidget {
   final DashboardAppointmentSection section;
   final String timeZone;
   final String emptyMessage;
+  final bool enableFilter;
+
+  @override
+  State<_AppointmentPanel> createState() => _AppointmentPanelState();
+}
+
+class _AppointmentPanelState extends State<_AppointmentPanel> {
+  AppointmentStatus? _statusFilter;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final items = _statusFilter == null
+        ? widget.section.items
+        : widget.section.items
+            .where((item) => item.status == _statusFilter)
+            .toList(growable: false);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.medium),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text('$subtitle · ${section.totalCount}'),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 4),
+                      Text('${widget.subtitle} · ${widget.section.totalCount}'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (widget.enableFilter && widget.section.items.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.small),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    FilterChip(
+                      label: Text(l10n.filterAll),
+                      selected: _statusFilter == null,
+                      onSelected: (_) => setState(() => _statusFilter = null),
+                    ),
+                    const SizedBox(width: 8),
+                    FilterChip(
+                      label: Text(l10n.filterScheduled),
+                      selected: _statusFilter == AppointmentStatus.scheduled,
+                      onSelected: (val) => setState(() => _statusFilter = val ? AppointmentStatus.scheduled : null),
+                    ),
+                    const SizedBox(width: 8),
+                    FilterChip(
+                      label: Text(l10n.filterConfirmed),
+                      selected: _statusFilter == AppointmentStatus.confirmed,
+                      onSelected: (val) => setState(() => _statusFilter = val ? AppointmentStatus.confirmed : null),
+                    ),
+                    const SizedBox(width: 8),
+                    FilterChip(
+                      label: Text(l10n.filterInProgress),
+                      selected: _statusFilter == AppointmentStatus.inProgress,
+                      onSelected: (val) => setState(() => _statusFilter = val ? AppointmentStatus.inProgress : null),
+                    ),
+                    const SizedBox(width: 8),
+                    FilterChip(
+                      label: Text(l10n.filterCompleted),
+                      selected: _statusFilter == AppointmentStatus.completed,
+                      onSelected: (val) => setState(() => _statusFilter = val ? AppointmentStatus.completed : null),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.medium),
-            if (section.items.isEmpty)
+            if (items.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.large),
-                child: Text(emptyMessage, textAlign: TextAlign.center),
+                child: Text(widget.emptyMessage, textAlign: TextAlign.center),
               )
             else
-              for (final appointment in section.items)
-                _AppointmentRow(appointment: appointment, timeZone: timeZone),
+              for (final appointment in items)
+                _AppointmentRow(appointment: appointment, timeZone: widget.timeZone),
             const SizedBox(height: AppSpacing.small),
             TextButton.icon(
               onPressed: () => context.go('/appointments'),
@@ -503,34 +750,103 @@ class _AppointmentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final local = tz.TZDateTime.from(
       appointment.startsAt,
       tz.getLocation(timeZone),
     );
     final status = _status(AppLocalizations.of(context), appointment.status);
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      minVerticalPadding: AppSpacing.small,
-      leading: SizedBox(
-        width: 64,
-        child: Directionality(
-          textDirection: TextDirection.ltr,
-          child: Text(
-            DateFormat.jm(locale).format(local),
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
+    final initial = appointment.patientName.trim().isNotEmpty
+        ? appointment.patientName.trim().characters.first.toUpperCase()
+        : '?';
+
+    final (statusBg, statusFg, statusIcon) = switch (appointment.status) {
+      AppointmentStatus.scheduled => (
+          theme.colorScheme.primaryContainer.withValues(alpha: 0.6),
+          theme.colorScheme.primary,
+          Icons.schedule_rounded,
+        ),
+      AppointmentStatus.confirmed => (
+          const Color(0xFFE8F5E9),
+          const Color(0xFF2E7D32),
+          Icons.check_circle_outline_rounded,
+        ),
+      AppointmentStatus.inProgress => (
+          const Color(0xFFFFF3E0),
+          const Color(0xFFE65100),
+          Icons.play_circle_outline_rounded,
+        ),
+      AppointmentStatus.completed => (
+          theme.colorScheme.surfaceContainerHighest,
+          theme.colorScheme.onSurfaceVariant,
+          Icons.task_alt_rounded,
+        ),
+      AppointmentStatus.cancelled => (
+          theme.colorScheme.surfaceContainerLow,
+          theme.colorScheme.outline,
+          Icons.cancel_outlined,
+        ),
+      AppointmentStatus.noShow => (
+          theme.colorScheme.errorContainer,
+          theme.colorScheme.error,
+          Icons.person_off_outlined,
+        ),
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
         ),
       ),
-      title: Text(appointment.patientName),
-      subtitle: Text(
-        '${appointment.patientNumber} · ${appointment.dentistLabel}',
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        leading: CircleAvatar(
+          backgroundColor: theme.colorScheme.primaryContainer,
+          foregroundColor: theme.colorScheme.onPrimaryContainer,
+          child: Text(
+            initial,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        title: Text(
+          appointment.patientName,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          '${DateFormat.jm(locale).format(local)} · ${appointment.patientNumber} · ${appointment.dentistLabel}',
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: statusBg,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(statusIcon, size: 14, color: statusFg),
+              const SizedBox(width: 4),
+              Text(
+                status,
+                style: TextStyle(
+                  color: statusFg,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        onTap: () {
+          unawaited(HapticFeedback.lightImpact());
+          context.go('/patients/${appointment.patientId}');
+        },
       ),
-      trailing: Chip(
-        label: Text(status),
-        avatar: const Icon(Icons.circle, size: 10),
-      ),
-      onTap: () => context.go('/patients/${appointment.patientId}'),
     );
   }
 

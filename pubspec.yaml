@@ -1,7 +1,7 @@
 name: dental_clini_management_saas
 description: DentaFlow dental clinic management — fictional-data development build.
 publish_to: 'none'
-version: 0.3.0+3
+version: 0.4.0+4
 
 environment:
   sdk: ^3.12.2
@@ -28,6 +28,7 @@ dependencies:
   url_launcher: 6.3.2
   cupertino_icons: 1.0.8
   web: 1.1.1
+  google_fonts: ^8.2.1
 
 dev_dependencies:
   flutter_test:

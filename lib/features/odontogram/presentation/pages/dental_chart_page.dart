@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -17,6 +19,8 @@ import '../../../treatment_plan/presentation/treatment_plan_cubit.dart';
 import '../../domain/odontogram_models.dart';
 import '../odontogram_cubit.dart';
 
+enum JawView { both, upper, lower }
+
 class DentalChartPage extends StatefulWidget {
   const DentalChartPage({required this.patientId, super.key});
   final String patientId;
@@ -28,6 +32,7 @@ class DentalChartPage extends StatefulWidget {
 class _DentalChartPageState extends State<DentalChartPage> {
   String? _loadedPatientId;
   Dentition _dentition = Dentition.permanent;
+  JawView _jawView = JawView.both;
   int? _selectedTooth;
 
   @override
@@ -143,6 +148,32 @@ class _DentalChartPageState extends State<DentalChartPage> {
                     _selectedTooth = null;
                   }),
                 ),
+              const SizedBox(height: 12),
+              SegmentedButton<JawView>(
+                key: const ValueKey('jaw-view-selector'),
+                segments: [
+                  ButtonSegment(
+                    value: JawView.both,
+                    icon: const Icon(Icons.grid_view_rounded, size: 16),
+                    label: Text(l.jawViewAll),
+                  ),
+                  ButtonSegment(
+                    value: JawView.upper,
+                    icon: const Icon(Icons.arrow_upward_rounded, size: 16),
+                    label: Text(l.jawViewUpper),
+                  ),
+                  ButtonSegment(
+                    value: JawView.lower,
+                    icon: const Icon(Icons.arrow_downward_rounded, size: 16),
+                    label: Text(l.jawViewLower),
+                  ),
+                ],
+                selected: {_jawView},
+                onSelectionChanged: (selection) => setState(() {
+                  unawaited(HapticFeedback.lightImpact());
+                  _jawView = selection.first;
+                }),
+              ),
               const SizedBox(height: 16),
               if (state.status == OdontogramLoadStatus.loading)
                 const LinearProgressIndicator(),
@@ -155,9 +186,13 @@ class _DentalChartPageState extends State<DentalChartPage> {
               const SizedBox(height: 12),
               _ToothArch(
                 dentition: _dentition,
+                jawView: _jawView,
                 selectedTooth: _selectedTooth,
                 conditions: state.active,
-                onSelected: (tooth) => setState(() => _selectedTooth = tooth),
+                onSelected: (tooth) {
+                  unawaited(HapticFeedback.lightImpact());
+                  setState(() => _selectedTooth = tooth);
+                },
               ),
               if (canEdit && _selectedTooth == null) ...[
                 const SizedBox(height: 12),
@@ -701,11 +736,13 @@ class _ToothArch extends StatelessWidget {
     required this.selectedTooth,
     required this.conditions,
     required this.onSelected,
+    this.jawView = JawView.both,
   });
   final Dentition dentition;
   final int? selectedTooth;
   final List<ToothCondition> conditions;
   final ValueChanged<int> onSelected;
+  final JawView jawView;
 
   @override
   Widget build(BuildContext context) {
@@ -724,6 +761,9 @@ class _ToothArch extends StatelessWidget {
         ? const [31, 32, 33, 34, 35, 36, 37, 38]
         : const [71, 72, 73, 74, 75];
 
+    final showUpper = jawView == JawView.both || jawView == JawView.upper;
+    final showLower = jawView == JawView.both || jawView == JawView.lower;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -740,40 +780,46 @@ class _ToothArch extends StatelessWidget {
                   width: contentWidth,
                   child: Column(
                     children: [
-                      _QuadrantHeader(
-                        leftLabel: l.quadrantUpperRight,
-                        rightLabel: l.quadrantUpperLeft,
-                        midlineLabel: l.dentalMidline,
-                      ),
-                      const SizedBox(height: 6),
-                      _ArchRow(
-                        leftTeeth: upperRight,
-                        rightTeeth: upperLeft,
-                        isUpper: true,
-                        selectedTooth: selectedTooth,
-                        conditions: conditions,
-                        onSelected: onSelected,
-                      ),
-                      const SizedBox(height: 8),
-                      _JawDivider(
-                        upperLabel: l.maxillaUpperJaw,
-                        lowerLabel: l.mandibleLowerJaw,
-                      ),
-                      const SizedBox(height: 8),
-                      _ArchRow(
-                        leftTeeth: lowerRight,
-                        rightTeeth: lowerLeft,
-                        isUpper: false,
-                        selectedTooth: selectedTooth,
-                        conditions: conditions,
-                        onSelected: onSelected,
-                      ),
-                      const SizedBox(height: 6),
-                      _QuadrantHeader(
-                        leftLabel: l.quadrantLowerRight,
-                        rightLabel: l.quadrantLowerLeft,
-                        midlineLabel: l.dentalMidline,
-                      ),
+                      if (showUpper) ...[
+                        _QuadrantHeader(
+                          leftLabel: l.quadrantUpperRight,
+                          rightLabel: l.quadrantUpperLeft,
+                          midlineLabel: l.dentalMidline,
+                        ),
+                        const SizedBox(height: 6),
+                        _ArchRow(
+                          leftTeeth: upperRight,
+                          rightTeeth: upperLeft,
+                          isUpper: true,
+                          selectedTooth: selectedTooth,
+                          conditions: conditions,
+                          onSelected: onSelected,
+                        ),
+                      ],
+                      if (showUpper && showLower) ...[
+                        const SizedBox(height: 8),
+                        _JawDivider(
+                          upperLabel: l.maxillaUpperJaw,
+                          lowerLabel: l.mandibleLowerJaw,
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      if (showLower) ...[
+                        _ArchRow(
+                          leftTeeth: lowerRight,
+                          rightTeeth: lowerLeft,
+                          isUpper: false,
+                          selectedTooth: selectedTooth,
+                          conditions: conditions,
+                          onSelected: onSelected,
+                        ),
+                        const SizedBox(height: 6),
+                        _QuadrantHeader(
+                          leftLabel: l.quadrantLowerRight,
+                          rightLabel: l.quadrantLowerLeft,
+                          midlineLabel: l.dentalMidline,
+                        ),
+                      ],
                     ],
                   ),
                 ),

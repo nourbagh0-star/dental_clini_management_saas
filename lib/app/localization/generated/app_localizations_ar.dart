@@ -2280,4 +2280,52 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get selectProcedureToAdd => 'اختر إجراء من قائمة العيادة';
+
+  @override
+  String get quickActions => 'إجراءات سريعة';
+
+  @override
+  String get quickNewAppointment => 'حجز موعد سريع';
+
+  @override
+  String get quickNewPatient => 'إضافة مريض جديد';
+
+  @override
+  String get inChairPatient => 'المريض في الكرسي الآن';
+
+  @override
+  String get nextPatient => 'المريض القادم اليوم';
+
+  @override
+  String get openClinicalSession => 'فتح الجلسة السريرية';
+
+  @override
+  String get jawViewAll => 'كلا الفكين';
+
+  @override
+  String get jawViewUpper => 'الفك العلوي';
+
+  @override
+  String get jawViewLower => 'الفك السفلي';
+
+  @override
+  String get callPatient => 'الاتصال بالمريض';
+
+  @override
+  String get filterAll => 'الكل';
+
+  @override
+  String get filterScheduled => 'مجدول';
+
+  @override
+  String get filterConfirmed => 'مؤكد';
+
+  @override
+  String get filterInProgress => 'قيد العلاج';
+
+  @override
+  String get filterCompleted => 'مكتمل';
+
+  @override
+  String get quickToothActions => 'إجراءات السن السريعة';
 }

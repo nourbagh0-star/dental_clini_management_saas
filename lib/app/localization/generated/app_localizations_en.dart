@@ -2304,4 +2304,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get selectProcedureToAdd => 'Select Procedure from Catalogue';
+
+  @override
+  String get quickActions => 'Quick Actions';
+
+  @override
+  String get quickNewAppointment => 'New Appointment';
+
+  @override
+  String get quickNewPatient => 'New Patient';
+
+  @override
+  String get inChairPatient => 'In The Dental Chair';
+
+  @override
+  String get nextPatient => 'Next Patient Today';
+
+  @override
+  String get openClinicalSession => 'Open Clinical Session';
+
+  @override
+  String get jawViewAll => 'Both Jaws';
+
+  @override
+  String get jawViewUpper => 'Upper Jaw (Maxilla)';
+
+  @override
+  String get jawViewLower => 'Lower Jaw (Mandible)';
+
+  @override
+  String get callPatient => 'Call Patient';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterScheduled => 'Scheduled';
+
+  @override
+  String get filterConfirmed => 'Confirmed';
+
+  @override
+  String get filterInProgress => 'In Progress';
+
+  @override
+  String get filterCompleted => 'Completed';
+
+  @override
+  String get quickToothActions => 'Quick Tooth Actions';
 }

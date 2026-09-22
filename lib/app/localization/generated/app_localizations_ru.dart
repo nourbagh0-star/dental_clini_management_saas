@@ -2308,4 +2308,52 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get selectProcedureToAdd => 'Выберите процедуру из справочника';
+
+  @override
+  String get quickActions => 'Быстрые действия';
+
+  @override
+  String get quickNewAppointment => 'Новая запись';
+
+  @override
+  String get quickNewPatient => 'Новый пациент';
+
+  @override
+  String get inChairPatient => 'Пациент в кресле';
+
+  @override
+  String get nextPatient => 'Следующий пациент сегодня';
+
+  @override
+  String get openClinicalSession => 'Открыть прием';
+
+  @override
+  String get jawViewAll => 'Обе челюсти';
+
+  @override
+  String get jawViewUpper => 'Верхняя челюсть';
+
+  @override
+  String get jawViewLower => 'Нижняя челюсть';
+
+  @override
+  String get callPatient => 'Позвонить пациенту';
+
+  @override
+  String get filterAll => 'Все';
+
+  @override
+  String get filterScheduled => 'Запланировано';
+
+  @override
+  String get filterConfirmed => 'Подтверждено';
+
+  @override
+  String get filterInProgress => 'На приеме';
+
+  @override
+  String get filterCompleted => 'Завершено';
+
+  @override
+  String get quickToothActions => 'Быстрые действия с зубом';
 }
