@@ -776,4 +776,16 @@
   ,"financialSummaryTitle": "Финансовый обзор"
   ,"topProceduresTitle": "Популярные процедуры"
   ,"exportCenterTitle": "Центр экспорта данных"
+  ,"patientAppointmentsTimelineTitle": "График приемов пациента"
+  ,"treatmentProceduresTab": "Процедуры лечения"
+  ,"patientAppointmentsTab": "Приемы ({count})"
+  ,"@patientAppointmentsTab": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
+  ,"upcomingAppointmentsSection": "Предстоящие приемы"
+  ,"pastAppointmentsSection": "Прошедшие приемы"
+  ,"noAppointmentsForPatient": "У этого пациента пока нет записей на прием."
+  ,"viewTreatmentPlanLabel": "Посмотреть план лечения"
 }

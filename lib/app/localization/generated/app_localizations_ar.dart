@@ -2379,4 +2379,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get exportCenterTitle => 'مركز تصدير البيانات';
+
+  @override
+  String get patientAppointmentsTimelineTitle => 'جدول مواعيد المريض';
+
+  @override
+  String get treatmentProceduresTab => 'إجراءات العلاج';
+
+  @override
+  String patientAppointmentsTab(int count) {
+    return 'المواعيد ($count)';
+  }
+
+  @override
+  String get upcomingAppointmentsSection => 'المواعيد القادمة';
+
+  @override
+  String get pastAppointmentsSection => 'المواعيد السابقة';
+
+  @override
+  String get noAppointmentsForPatient =>
+      'لا توجد أي مواعيد مسجلة لهذا المريض حتى الآن.';
+
+  @override
+  String get viewTreatmentPlanLabel => 'عرض خطة العلاج';
 }

@@ -801,5 +801,17 @@
   ,"financialSummaryTitle": "Financial Overview"
   ,"topProceduresTitle": "Top Clinic Procedures"
   ,"exportCenterTitle": "Data Export Center"
+  ,"patientAppointmentsTimelineTitle": "Patient Appointments Timeline"
+  ,"treatmentProceduresTab": "Treatment Procedures"
+  ,"patientAppointmentsTab": "Appointments ({count})"
+  ,"@patientAppointmentsTab": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
+  ,"upcomingAppointmentsSection": "Upcoming Appointments"
+  ,"pastAppointmentsSection": "Past Appointments"
+  ,"noAppointmentsForPatient": "No appointments recorded for this patient yet."
+  ,"viewTreatmentPlanLabel": "View Treatment Plan"
 }
 

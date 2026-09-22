@@ -2404,4 +2404,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exportCenterTitle => 'Data Export Center';
+
+  @override
+  String get patientAppointmentsTimelineTitle =>
+      'Patient Appointments Timeline';
+
+  @override
+  String get treatmentProceduresTab => 'Treatment Procedures';
+
+  @override
+  String patientAppointmentsTab(int count) {
+    return 'Appointments ($count)';
+  }
+
+  @override
+  String get upcomingAppointmentsSection => 'Upcoming Appointments';
+
+  @override
+  String get pastAppointmentsSection => 'Past Appointments';
+
+  @override
+  String get noAppointmentsForPatient =>
+      'No appointments recorded for this patient yet.';
+
+  @override
+  String get viewTreatmentPlanLabel => 'View Treatment Plan';
 }

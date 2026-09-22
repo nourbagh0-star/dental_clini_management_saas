@@ -2408,4 +2408,28 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get exportCenterTitle => 'Центр экспорта данных';
+
+  @override
+  String get patientAppointmentsTimelineTitle => 'График приемов пациента';
+
+  @override
+  String get treatmentProceduresTab => 'Процедуры лечения';
+
+  @override
+  String patientAppointmentsTab(int count) {
+    return 'Приемы ($count)';
+  }
+
+  @override
+  String get upcomingAppointmentsSection => 'Предстоящие приемы';
+
+  @override
+  String get pastAppointmentsSection => 'Прошедшие приемы';
+
+  @override
+  String get noAppointmentsForPatient =>
+      'У этого пациента пока нет записей на прием.';
+
+  @override
+  String get viewTreatmentPlanLabel => 'Посмотреть план лечения';
 }

@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../../../app/localization/generated/app_localizations.dart';
 import '../../../../core/error/failure_message.dart';
-import '../../../../core/widgets/app_dialog.dart';
 import '../../../../core/value/money.dart';
+import '../../../../core/widgets/app_dialog.dart';
+import '../../../appointment/domain/appointment_models.dart';
+import '../../../appointment/presentation/appointment_cubit.dart';
+import '../../../appointment/presentation/whatsapp_reminder_helper.dart';
 import '../../../clinic/presentation/clinic_cubit.dart';
 import '../../../patient/domain/patient_models.dart';
 import '../../../patient/presentation/patient_cubit.dart';
@@ -25,6 +30,7 @@ class TreatmentPlanPage extends StatefulWidget {
 
 class _TreatmentPlanPageState extends State<TreatmentPlanPage> {
   String? _loadedKey;
+  int _selectedTab = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +38,7 @@ class _TreatmentPlanPageState extends State<TreatmentPlanPage> {
     final clinicState = context.watch<ClinicCubit>().state;
     final clinic = clinicState.activeClinic;
     final roles = clinicState.activeMembership?.roles ?? const <String>{};
-    final canEdit = roles.contains('dentist');
+    final canEdit = roles.contains('dentist') || roles.contains('owner');
     final patient = context
         .watch<PatientCubit>()
         .state
@@ -54,6 +60,16 @@ class _TreatmentPlanPageState extends State<TreatmentPlanPage> {
           widget.patientId,
         );
         context.read<StaffCubit>().load(clinic.id);
+        final now = DateTime.now();
+        final from = now.subtract(const Duration(days: 90));
+        final until = now.add(const Duration(days: 180));
+        try {
+          context.read<AppointmentCubit>().load(
+            clinicId: clinic.id,
+            from: from.toUtc(),
+            until: until.toUtc(),
+          );
+        } catch (_) {}
       });
     }
     final dentists = context
@@ -65,6 +81,26 @@ class _TreatmentPlanPageState extends State<TreatmentPlanPage> {
               member.isActive && member.roles.contains(StaffRole.dentist),
         )
         .toList(growable: false);
+
+    AppointmentState appointmentState = const AppointmentState();
+    try {
+      appointmentState = context.watch<AppointmentCubit>().state;
+    } catch (_) {}
+    final patientAppointments = appointmentState.appointments
+        .where((item) => item.patientId == widget.patientId)
+        .toList()
+      ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+
+    final now = DateTime.now();
+    final upcomingAppointments = patientAppointments
+        .where((a) => a.startsAt.isAfter(now) || a.endsAt.isAfter(now))
+        .toList();
+    final pastAppointments = patientAppointments
+        .where((a) => a.endsAt.isBefore(now))
+        .toList()
+        .reversed
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l.treatmentPlansTitle),
@@ -81,15 +117,23 @@ class _TreatmentPlanPageState extends State<TreatmentPlanPage> {
           ),
         ],
       ),
-      floatingActionButton: canEdit
-          ? FloatingActionButton.extended(
-              onPressed: dentists.isEmpty
-                  ? () => _showMessage(context, l.noActiveDentist)
-                  : () => _createPlan(context, dentists),
-              icon: const Icon(Icons.playlist_add),
-              label: Text(l.newPlanLabel),
-            )
-          : null,
+      floatingActionButton: _selectedTab == 0
+          ? (canEdit
+              ? FloatingActionButton.extended(
+                  onPressed: dentists.isEmpty
+                      ? () => _showMessage(context, l.noActiveDentist)
+                      : () => _createPlan(context, dentists),
+                  icon: const Icon(Icons.playlist_add),
+                  label: Text(l.newPlanLabel),
+                )
+              : null)
+          : FloatingActionButton.extended(
+              onPressed: () => context.go(
+                '/appointments/new?patientId=${widget.patientId}',
+              ),
+              icon: const Icon(Icons.event),
+              label: Text(l.bookAppointmentLabel),
+            ),
       body: BlocConsumer<TreatmentPlanCubit, TreatmentPlanState>(
         listener: (context, state) {
           if (state.issue != null) {
@@ -106,38 +150,135 @@ class _TreatmentPlanPageState extends State<TreatmentPlanPage> {
                   child: Text(l.treatmentViewOnly),
                 ),
               const SizedBox(height: 16),
-              if (state.status == TreatmentPlanLoadStatus.loading ||
-                  state.mutating)
-                const LinearProgressIndicator(),
-              if (state.failure != null)
-                _MessageCard(
-                  message: failureMessage(
-                    state.failure!,
-                    AppLocalizations.of(context),
+              SegmentedButton<int>(
+                segments: [
+                  ButtonSegment<int>(
+                    value: 0,
+                    icon: const Icon(Icons.medical_services_outlined),
+                    label: Text(l.treatmentProceduresTab),
+                  ),
+                  ButtonSegment<int>(
+                    value: 1,
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    label: Text(
+                      l.patientAppointmentsTab(patientAppointments.length),
+                    ),
+                  ),
+                ],
+                selected: {_selectedTab},
+                onSelectionChanged: (set) =>
+                    setState(() => _selectedTab = set.first),
+              ),
+              const SizedBox(height: 16),
+              if (_selectedTab == 0) ...[
+                if (state.status == TreatmentPlanLoadStatus.loading ||
+                    state.mutating)
+                  const LinearProgressIndicator(),
+                if (state.failure != null)
+                  _MessageCard(
+                    message: failureMessage(
+                      state.failure!,
+                      AppLocalizations.of(context),
+                    ),
+                  ),
+                if (state.status == TreatmentPlanLoadStatus.ready &&
+                    state.plans.isEmpty)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 32,
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.assignment_outlined,
+                            size: 56,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.7),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            l.noTreatmentPlan,
+                            style: Theme.of(context).textTheme.titleMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              if (canEdit)
+                                FilledButton.icon(
+                                  onPressed: dentists.isEmpty
+                                      ? () => _showMessage(
+                                          context,
+                                          l.noActiveDentist,
+                                        )
+                                      : () => _createPlan(context, dentists),
+                                  icon: const Icon(Icons.add),
+                                  label: Text(l.newPlanLabel),
+                                ),
+                              OutlinedButton.icon(
+                                onPressed: () => context.go(
+                                  '/appointments/new?patientId=${widget.patientId}',
+                                ),
+                                icon: const Icon(Icons.calendar_today_outlined),
+                                label: Text(l.bookAppointmentLabel),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: () => context.go(
+                                  '/patients/${widget.patientId}/dental-chart',
+                                ),
+                                icon: const Icon(Icons.grid_view_rounded),
+                                label: Text(l.dentalChartTitle),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (state.plans.isNotEmpty)
+                  _PlanWorkspace(
+                    state: state,
+                    canEdit: canEdit,
+                    currencyCode: clinic.currencyCode,
+                    dentists: dentists,
+                    onEditNotes: () => _editNotes(context, state.selectedPlan!),
+                    onAddItem: () => _editItem(context, state, dentists),
+                    onEditItem: (item) =>
+                        _editItem(context, state, dentists, existing: item),
+                    onPlanTransition: (status) => _confirmPlanTransition(
+                      context,
+                      state.selectedPlan!,
+                      status,
+                    ),
+                    onItemTransition: (item, status) => context
+                        .read<TreatmentPlanCubit>()
+                        .transitionItem(item.id, status),
+                    onBookAppointment: (item) => _bookAppointmentForItem(
+                      context,
+                      item,
+                      state.procedures,
+                    ),
+                  ),
+              ] else ...[
+                _PatientAppointmentsTimeline(
+                  patientId: widget.patientId,
+                  patientName: patient.fullName,
+                  clinicId: clinic.id,
+                  clinicTimeZone: clinic.timeZone,
+                  upcomingAppointments: upcomingAppointments,
+                  pastAppointments: pastAppointments,
+                  onBookAppointment: () => context.go(
+                    '/appointments/new?patientId=${widget.patientId}',
                   ),
                 ),
-              if (state.status == TreatmentPlanLoadStatus.ready &&
-                  state.plans.isEmpty)
-                _MessageCard(message: l.noTreatmentPlan),
-              if (state.plans.isNotEmpty)
-                _PlanWorkspace(
-                  state: state,
-                  canEdit: canEdit,
-                  currencyCode: clinic.currencyCode,
-                  dentists: dentists,
-                  onEditNotes: () => _editNotes(context, state.selectedPlan!),
-                  onAddItem: () => _editItem(context, state, dentists),
-                  onEditItem: (item) =>
-                      _editItem(context, state, dentists, existing: item),
-                  onPlanTransition: (status) => _confirmPlanTransition(
-                    context,
-                    state.selectedPlan!,
-                    status,
-                  ),
-                  onItemTransition: (item, status) => context
-                      .read<TreatmentPlanCubit>()
-                      .transitionItem(item.id, status),
-                ),
+              ],
               const SizedBox(height: 80),
             ];
             return ListView(
@@ -161,6 +302,31 @@ class _TreatmentPlanPageState extends State<TreatmentPlanPage> {
         ),
       ),
     );
+  }
+
+  void _bookAppointmentForItem(
+    BuildContext context,
+    TreatmentPlanItem item,
+    List<ClinicProcedure> procedures,
+  ) {
+    final l = AppLocalizations.of(context);
+    final proc = procedures.where((p) => p.id == item.procedureId).firstOrNull;
+    final purpose = [
+      proc?.name ?? '',
+      if (item.toothNumber != null) l.toothNumberValue(item.toothNumber!),
+    ].where((s) => s.isNotEmpty).join(' - ');
+    final query = Uri(
+      queryParameters: {
+        'patientId': widget.patientId,
+        if (purpose.isNotEmpty) 'purpose': purpose,
+        if (item.assignedDentistId != null &&
+            item.assignedDentistId!.isNotEmpty)
+          'dentistId': item.assignedDentistId,
+        if (proc?.durationMinutes != null && proc!.durationMinutes > 0)
+          'duration': proc.durationMinutes.toString(),
+      },
+    ).query;
+    context.go('/appointments/new?$query');
   }
 
   Future<void> _createPlan(
@@ -298,12 +464,7 @@ class _TreatmentPlanPageState extends State<TreatmentPlanPage> {
     final price = TextEditingController(
       text: existing?.estimatedPrice.toDecimalString(),
     );
-    if (existing == null) {
-      price.text = procedures
-          .firstWhere((item) => item.id == procedureId)
-          .defaultPrice
-          .toDecimalString();
-    }
+
     final submitted = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -425,6 +586,7 @@ class _TreatmentPlanPageState extends State<TreatmentPlanPage> {
         ),
       ),
     );
+
     if (submitted == true && context.mounted) {
       final draft = TreatmentPlanItemDraft(
         procedureId: procedureId!,
@@ -484,12 +646,12 @@ class _PatientHeader extends StatelessWidget {
   final Patient patient;
   @override
   Widget build(BuildContext context) => Card(
-    child: ListTile(
-      leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-      title: Text(patient.fullName),
-      subtitle: Text(patient.patientNumber),
-    ),
-  );
+        child: ListTile(
+          leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+          title: Text(patient.fullName),
+          subtitle: Text(patient.patientNumber),
+        ),
+      );
 }
 
 class _PlanWorkspace extends StatelessWidget {
@@ -503,6 +665,7 @@ class _PlanWorkspace extends StatelessWidget {
     required this.onEditItem,
     required this.onPlanTransition,
     required this.onItemTransition,
+    required this.onBookAppointment,
   });
   final TreatmentPlanState state;
   final bool canEdit;
@@ -513,7 +676,8 @@ class _PlanWorkspace extends StatelessWidget {
   final ValueChanged<TreatmentPlanItem> onEditItem;
   final ValueChanged<TreatmentPlanStatus> onPlanTransition;
   final void Function(TreatmentPlanItem, TreatmentPlanItemStatus)
-  onItemTransition;
+      onItemTransition;
+  final ValueChanged<TreatmentPlanItem> onBookAppointment;
 
   @override
   Widget build(BuildContext context) {
@@ -542,8 +706,8 @@ class _PlanWorkspace extends StatelessWidget {
                       : null,
                   child: ListTile(
                     onTap: () => context.read<TreatmentPlanCubit>().selectPlan(
-                      option.id,
-                    ),
+                          option.id,
+                        ),
                     title: Text(_planStatusLabel(option.status, l)),
                     subtitle: Text(
                       '${option.totalEstimatedCost.toDecimalString()} $currencyCode\n'
@@ -614,15 +778,15 @@ class _PlanWorkspace extends StatelessWidget {
                         onPressed: state.mutating
                             ? null
                             : () =>
-                                  onPlanTransition(TreatmentPlanStatus.active),
+                                onPlanTransition(TreatmentPlanStatus.active),
                         child: Text(l.activatePlanLabel),
                       ),
                       TextButton(
                         onPressed: state.mutating
                             ? null
                             : () => onPlanTransition(
-                                TreatmentPlanStatus.cancelled,
-                              ),
+                                  TreatmentPlanStatus.cancelled,
+                                ),
                         child: Text(l.cancelPlanLabel),
                       ),
                     ],
@@ -636,17 +800,16 @@ class _PlanWorkspace extends StatelessWidget {
                       FilledButton.tonal(
                         onPressed: state.mutating
                             ? null
-                            : () => onPlanTransition(
-                                TreatmentPlanStatus.completed,
-                              ),
+                            : () =>
+                                onPlanTransition(TreatmentPlanStatus.completed),
                         child: Text(l.completePlanLabel),
                       ),
                       TextButton(
                         onPressed: state.mutating
                             ? null
                             : () => onPlanTransition(
-                                TreatmentPlanStatus.cancelled,
-                              ),
+                                  TreatmentPlanStatus.cancelled,
+                                ),
                         child: Text(l.cancelPlanLabel),
                       ),
                     ],
@@ -683,6 +846,7 @@ class _PlanWorkspace extends StatelessWidget {
                 mutating: state.mutating,
                 onEdit: () => onEditItem(item),
                 onTransition: (status) => onItemTransition(item, status),
+                onBookAppointment: () => onBookAppointment(item),
               );
             },
           )
@@ -700,6 +864,7 @@ class _PlanWorkspace extends StatelessWidget {
               mutating: state.mutating,
               onEdit: () => onEditItem(item),
               onTransition: (status) => onItemTransition(item, status),
+              onBookAppointment: () => onBookAppointment(item),
             ),
       ],
     );
@@ -731,6 +896,7 @@ class _PlanItemCard extends StatelessWidget {
     required this.mutating,
     required this.onEdit,
     required this.onTransition,
+    required this.onBookAppointment,
     super.key,
   });
   final TreatmentPlanItem item;
@@ -742,6 +908,7 @@ class _PlanItemCard extends StatelessWidget {
   final bool mutating;
   final VoidCallback onEdit;
   final ValueChanged<TreatmentPlanItemStatus> onTransition;
+  final VoidCallback onBookAppointment;
 
   @override
   Widget build(BuildContext context) {
@@ -779,6 +946,11 @@ class _PlanItemCard extends StatelessWidget {
                   if (dentist != null) Text(l.dentistValue(dentist!.email)),
                 ],
               ),
+            ),
+            IconButton(
+              onPressed: mutating ? null : onBookAppointment,
+              icon: const Icon(Icons.calendar_today_outlined),
+              tooltip: l.bookAppointmentLabel,
             ),
             if (canEditDraft)
               IconButton(
@@ -825,13 +997,361 @@ class _PlanItemCard extends StatelessWidget {
       };
 }
 
+class _PatientAppointmentsTimeline extends StatelessWidget {
+  const _PatientAppointmentsTimeline({
+    required this.patientId,
+    required this.patientName,
+    required this.clinicId,
+    required this.clinicTimeZone,
+    required this.upcomingAppointments,
+    required this.pastAppointments,
+    required this.onBookAppointment,
+  });
+
+  final String patientId;
+  final String patientName;
+  final String clinicId;
+  final String clinicTimeZone;
+  final List<Appointment> upcomingAppointments;
+  final List<Appointment> pastAppointments;
+  final VoidCallback onBookAppointment;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    if (upcomingAppointments.isEmpty && pastAppointments.isEmpty) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            children: [
+              Icon(
+                Icons.event_busy_outlined,
+                size: 56,
+                color: theme.colorScheme.primary.withValues(alpha: 0.7),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l.noAppointmentsForPatient,
+                style: theme.textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: onBookAppointment,
+                icon: const Icon(Icons.add),
+                label: Text(l.bookAppointmentLabel),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              l.patientAppointmentsTimelineTitle,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            FilledButton.icon(
+              onPressed: onBookAppointment,
+              icon: const Icon(Icons.add, size: 18),
+              label: Text(l.bookAppointmentLabel),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (upcomingAppointments.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.upcoming_outlined,
+                  size: 18,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l.upcomingAppointmentsSection,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Chip(
+                  label: Text('${upcomingAppointments.length}'),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+          ),
+          for (final appointment in upcomingAppointments) ...[
+            _PatientAppointmentCard(
+              appointment: appointment,
+              clinicTimeZone: clinicTimeZone,
+              isUpcoming: true,
+            ),
+            const SizedBox(height: 8),
+          ],
+          const SizedBox(height: 16),
+        ],
+        if (pastAppointments.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.history_outlined,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l.pastAppointmentsSection,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Chip(
+                  label: Text('${pastAppointments.length}'),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+          ),
+          for (final appointment in pastAppointments) ...[
+            _PatientAppointmentCard(
+              appointment: appointment,
+              clinicTimeZone: clinicTimeZone,
+              isUpcoming: false,
+            ),
+            const SizedBox(height: 8),
+          ],
+        ],
+      ],
+    );
+  }
+}
+
+class _PatientAppointmentCard extends StatelessWidget {
+  const _PatientAppointmentCard({
+    required this.appointment,
+    required this.clinicTimeZone,
+    required this.isUpcoming,
+  });
+
+  final Appointment appointment;
+  final String clinicTimeZone;
+  final bool isUpcoming;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    DateTime localStart;
+    DateTime localEnd;
+    tz.Location? location;
+    try {
+      tz_data.initializeTimeZones();
+      location = tz.getLocation(clinicTimeZone);
+      localStart = tz.TZDateTime.from(appointment.startsAt, location);
+      localEnd = tz.TZDateTime.from(appointment.endsAt, location);
+    } catch (_) {
+      location = null;
+      localStart = appointment.startsAt.toLocal();
+      localEnd = appointment.endsAt.toLocal();
+    }
+
+    final dateStr = DateFormat.yMMMEd().format(localStart);
+    final timeStr =
+        '${DateFormat.jm().format(localStart)} - ${DateFormat.jm().format(localEnd)}';
+
+    final (statusColor, statusBg, statusIcon) = _appointmentStatusStyle(
+      appointment.status,
+      theme,
+    );
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            size: 16,
+                            color: theme.colorScheme.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            dateStr,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 16,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            timeStr,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, size: 14, color: statusColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        _appointmentStatusLabel(appointment.status, l),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 20),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor:
+                      theme.colorScheme.primary.withValues(alpha: 0.1),
+                  child: Icon(
+                    Icons.person_outline,
+                    size: 14,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l.dentistValue(appointment.dentistName),
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+            if (appointment.purpose != null &&
+                appointment.purpose!.trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.medical_services_outlined,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      appointment.purpose!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (isUpcoming) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: () => WhatsAppReminderHelper.sendReminder(
+                      context: context,
+                      patientId: appointment.patientId,
+                      patientName: appointment.patientName,
+                      dentistName: appointment.dentistName,
+                      startsAt: appointment.startsAt,
+                      clinicId: appointment.clinicId,
+                      location: location,
+                    ),
+                    icon: const Icon(Icons.message_outlined, size: 16),
+                    label: Text(l.sendWhatsAppReminder),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MessageCard extends StatelessWidget {
   const _MessageCard({required this.message});
   final String message;
   @override
   Widget build(BuildContext context) => Card(
-    child: Padding(padding: const EdgeInsets.all(16), child: Text(message)),
-  );
+        child: Padding(padding: const EdgeInsets.all(16), child: Text(message)),
+      );
 }
 
 bool _validFdi(int number) {
@@ -855,17 +1375,20 @@ void _showMessage(BuildContext context, String message) {
 String _issueMessage(
   TreatmentPlanOperationIssue issue,
   AppLocalizations l,
-) => switch (issue) {
-  TreatmentPlanOperationIssue.forbidden => l.treatmentForbiddenIssue,
-  TreatmentPlanOperationIssue.unavailable => l.treatmentUnavailableIssue,
-  TreatmentPlanOperationIssue.invalidInput => l.treatmentInvalidInputIssue,
-  TreatmentPlanOperationIssue.draftOnly => l.treatmentDraftOnlyIssue,
-  TreatmentPlanOperationIssue.activeRequired => l.treatmentActiveRequiredIssue,
-  TreatmentPlanOperationIssue.itemsRequired => l.treatmentItemsRequiredIssue,
-  TreatmentPlanOperationIssue.activePlanExists => l.activePlanExistsIssue,
-  TreatmentPlanOperationIssue.invalidTransition =>
-    l.treatmentInvalidTransitionIssue,
-};
+) =>
+    switch (issue) {
+      TreatmentPlanOperationIssue.forbidden => l.treatmentForbiddenIssue,
+      TreatmentPlanOperationIssue.unavailable => l.treatmentUnavailableIssue,
+      TreatmentPlanOperationIssue.invalidInput => l.treatmentInvalidInputIssue,
+      TreatmentPlanOperationIssue.draftOnly => l.treatmentDraftOnlyIssue,
+      TreatmentPlanOperationIssue.activeRequired =>
+        l.treatmentActiveRequiredIssue,
+      TreatmentPlanOperationIssue.itemsRequired =>
+        l.treatmentItemsRequiredIssue,
+      TreatmentPlanOperationIssue.activePlanExists => l.activePlanExistsIssue,
+      TreatmentPlanOperationIssue.invalidTransition =>
+        l.treatmentInvalidTransitionIssue,
+    };
 
 String _planStatusLabel(TreatmentPlanStatus status, AppLocalizations l) =>
     switch (status) {
@@ -882,4 +1405,54 @@ String _itemStatusLabel(TreatmentPlanItemStatus status, AppLocalizations l) =>
       TreatmentPlanItemStatus.inProgress => l.itemStatusInProgress,
       TreatmentPlanItemStatus.completed => l.itemStatusCompleted,
       TreatmentPlanItemStatus.cancelled => l.itemStatusCancelled,
+    };
+
+String _appointmentStatusLabel(
+  AppointmentStatus status,
+  AppLocalizations l,
+) =>
+    switch (status) {
+      AppointmentStatus.scheduled => l.appointmentStatusScheduled,
+      AppointmentStatus.confirmed => l.appointmentStatusConfirmed,
+      AppointmentStatus.inProgress => l.appointmentStatusInProgress,
+      AppointmentStatus.completed => l.appointmentStatusCompleted,
+      AppointmentStatus.noShow => l.appointmentStatusNoShow,
+      AppointmentStatus.cancelled => l.appointmentStatusCancelled,
+    };
+
+(Color, Color, IconData) _appointmentStatusStyle(
+  AppointmentStatus status,
+  ThemeData theme,
+) =>
+    switch (status) {
+      AppointmentStatus.scheduled => (
+          theme.colorScheme.primary,
+          theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+          Icons.schedule_rounded,
+        ),
+      AppointmentStatus.confirmed => (
+          Colors.teal.shade700,
+          Colors.teal.withValues(alpha: 0.14),
+          Icons.check_circle_outline_rounded,
+        ),
+      AppointmentStatus.inProgress => (
+          Colors.deepOrange.shade700,
+          Colors.deepOrange.withValues(alpha: 0.14),
+          Icons.play_circle_outline_rounded,
+        ),
+      AppointmentStatus.completed => (
+          Colors.blueGrey.shade700,
+          Colors.blueGrey.withValues(alpha: 0.14),
+          Icons.task_alt_rounded,
+        ),
+      AppointmentStatus.noShow => (
+          theme.colorScheme.error,
+          theme.colorScheme.errorContainer.withValues(alpha: 0.3),
+          Icons.person_off_outlined,
+        ),
+      AppointmentStatus.cancelled => (
+          theme.colorScheme.outline,
+          theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+          Icons.cancel_outlined,
+        ),
     };

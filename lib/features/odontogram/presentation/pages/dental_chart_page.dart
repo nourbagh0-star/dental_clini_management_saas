@@ -14,6 +14,8 @@ import '../../../clinic/presentation/clinic_cubit.dart';
 import '../../../patient/domain/patient_models.dart';
 import '../../../patient/presentation/patient_cubit.dart';
 import '../../../patient/presentation/widgets/patient_medical_alert_banner.dart';
+import '../../../staff/domain/staff_models.dart';
+import '../../../staff/presentation/staff_cubit.dart';
 import '../../../treatment_plan/domain/treatment_plan_models.dart';
 import '../../../treatment_plan/presentation/treatment_plan_cubit.dart';
 import '../../domain/odontogram_models.dart';
@@ -46,7 +48,7 @@ class _DentalChartPageState extends State<DentalChartPage> {
         roles.contains('owner') ||
         roles.contains('dentist') ||
         roles.contains('assistant');
-    final canEdit = roles.contains('dentist');
+    final canEdit = roles.contains('dentist') || roles.contains('owner');
     final patient = context
         .watch<PatientCubit>()
         .state
@@ -68,6 +70,9 @@ class _DentalChartPageState extends State<DentalChartPage> {
                 .read<TreatmentPlanCubit>()
                 .loadPatient(clinic.id, widget.patientId);
           } catch (_) {}
+          try {
+            context.read<StaffCubit>().load(clinic.id);
+          } catch (_) {}
         }
       });
     }
@@ -79,6 +84,14 @@ class _DentalChartPageState extends State<DentalChartPage> {
           icon: const Icon(Icons.arrow_back),
           tooltip: l.backToPatientProfile,
         ),
+        actions: [
+          IconButton(
+            onPressed: () =>
+                context.go('/patients/${widget.patientId}/treatment-plans'),
+            icon: const Icon(Icons.assignment_outlined),
+            tooltip: l.treatmentPlansTitle,
+          ),
+        ],
       ),
       body: BlocConsumer<OdontogramCubit, OdontogramState>(
         listener: (context, state) {
@@ -540,15 +553,34 @@ class _DentalChartPageState extends State<DentalChartPage> {
                   final planCubit = context.read<TreatmentPlanCubit>();
                   final membership =
                       context.read<ClinicCubit>().state.activeMembership;
+                  List<StaffMember> staffMembers = const [];
+                  try {
+                    staffMembers = context.read<StaffCubit>().state.members;
+                  } catch (_) {}
 
                   var plan =
                       planCubit.state.selectedPlan ??
                       planCubit.state.plans.firstOrNull;
-                  final memberId = membership?.memberId;
-                  if (plan == null && memberId != null && memberId.isNotEmpty) {
+                  final currentMemberIsDentist =
+                      membership?.roles.contains('dentist') ?? false;
+                  final dentistMemberId = currentMemberIsDentist
+                      ? membership?.memberId
+                      : staffMembers
+                              .where(
+                                (m) =>
+                                    m.isActive &&
+                                    m.roles.contains(StaffRole.dentist),
+                              )
+                              .firstOrNull
+                              ?.id ??
+                          membership?.memberId;
+
+                  if (plan == null &&
+                      dentistMemberId != null &&
+                      dentistMemberId.isNotEmpty) {
                     await planCubit.createPlan(
                       patientId: widget.patientId,
-                      dentistMemberId: memberId,
+                      dentistMemberId: dentistMemberId,
                     );
                     plan =
                         planCubit.state.selectedPlan ??
@@ -562,14 +594,22 @@ class _DentalChartPageState extends State<DentalChartPage> {
                         toothNumber: toothNumber,
                         estimatedPrice: price,
                         description: notes.isEmpty ? null : notes,
-                        assignedDentistId: membership?.memberId,
+                        assignedDentistId: dentistMemberId,
                       ),
                     );
                     if (ok && context.mounted) {
                       ScaffoldMessenger.of(context)
                         ..hideCurrentSnackBar()
                         ..showSnackBar(
-                          SnackBar(content: Text(l.procedureAddedToPlan)),
+                          SnackBar(
+                            content: Text(l.procedureAddedToPlan),
+                            action: SnackBarAction(
+                              label: l.viewTreatmentPlanLabel,
+                              onPressed: () => context.go(
+                                '/patients/${widget.patientId}/treatment-plans',
+                              ),
+                            ),
+                          ),
                         );
                     }
                   }

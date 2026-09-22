@@ -775,4 +775,16 @@
   ,"financialSummaryTitle": "الملخص المالي"
   ,"topProceduresTitle": "أكثر الإجراءات الطبية طلباً"
   ,"exportCenterTitle": "مركز تصدير البيانات"
+  ,"patientAppointmentsTimelineTitle": "جدول مواعيد المريض"
+  ,"treatmentProceduresTab": "إجراءات العلاج"
+  ,"patientAppointmentsTab": "المواعيد ({count})"
+  ,"@patientAppointmentsTab": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  }
+  ,"upcomingAppointmentsSection": "المواعيد القادمة"
+  ,"pastAppointmentsSection": "المواعيد السابقة"
+  ,"noAppointmentsForPatient": "لا توجد أي مواعيد مسجلة لهذا المريض حتى الآن."
+  ,"viewTreatmentPlanLabel": "عرض خطة العلاج"
 }

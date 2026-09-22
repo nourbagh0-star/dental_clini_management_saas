@@ -4479,6 +4479,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Data Export Center'**
   String get exportCenterTitle;
+
+  /// No description provided for @patientAppointmentsTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Patient Appointments Timeline'**
+  String get patientAppointmentsTimelineTitle;
+
+  /// No description provided for @treatmentProceduresTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Treatment Procedures'**
+  String get treatmentProceduresTab;
+
+  /// No description provided for @patientAppointmentsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointments ({count})'**
+  String patientAppointmentsTab(int count);
+
+  /// No description provided for @upcomingAppointmentsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming Appointments'**
+  String get upcomingAppointmentsSection;
+
+  /// No description provided for @pastAppointmentsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Past Appointments'**
+  String get pastAppointmentsSection;
+
+  /// No description provided for @noAppointmentsForPatient.
+  ///
+  /// In en, this message translates to:
+  /// **'No appointments recorded for this patient yet.'**
+  String get noAppointmentsForPatient;
+
+  /// No description provided for @viewTreatmentPlanLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'View Treatment Plan'**
+  String get viewTreatmentPlanLabel;
 }
 
 class _AppLocalizationsDelegate
