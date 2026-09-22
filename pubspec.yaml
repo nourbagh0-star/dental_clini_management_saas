@@ -1,7 +1,7 @@
 name: dental_clini_management_saas
 description: DentaFlow dental clinic management — fictional-data development build.
 publish_to: 'none'
-version: 0.2.0+2
+version: 0.3.0+3
 
 environment:
   sdk: ^3.12.2
