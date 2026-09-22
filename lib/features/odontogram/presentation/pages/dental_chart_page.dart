@@ -6,11 +6,14 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../../../../app/localization/generated/app_localizations.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../core/error/failure_message.dart';
+import '../../../../core/value/money.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../clinic/presentation/clinic_cubit.dart';
 import '../../../patient/domain/patient_models.dart';
 import '../../../patient/presentation/patient_cubit.dart';
 import '../../../patient/presentation/widgets/patient_medical_alert_banner.dart';
+import '../../../treatment_plan/domain/treatment_plan_models.dart';
+import '../../../treatment_plan/presentation/treatment_plan_cubit.dart';
 import '../../domain/odontogram_models.dart';
 import '../odontogram_cubit.dart';
 
@@ -49,11 +52,19 @@ class _DentalChartPageState extends State<DentalChartPage> {
     if (patient == null) {
       return Scaffold(body: _DentalChartMessage(l.dentalChartUnavailable));
     }
+    final clinic = context.watch<ClinicCubit>().state.activeClinic;
     if (_loadedPatientId != widget.patientId) {
       _loadedPatientId = widget.patientId;
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => context.read<OdontogramCubit>().load(widget.patientId),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<OdontogramCubit>().load(widget.patientId);
+        if (clinic != null) {
+          try {
+            context
+                .read<TreatmentPlanCubit>()
+                .loadPatient(clinic.id, widget.patientId);
+          } catch (_) {}
+        }
+      });
     }
     return Scaffold(
       appBar: AppBar(
@@ -75,104 +86,135 @@ class _DentalChartPageState extends State<DentalChartPage> {
               ..showSnackBar(SnackBar(content: Text(message)));
           }
         },
-        builder: (context, state) => ListView(
-          padding: AppInsets.page(AppBreakpoints.of(context)),
-          children: [
-            _PatientHeader(patient: patient),
-            const SizedBox(height: 12),
-            PatientMedicalAlertBanner(patientId: widget.patientId),
-            const SizedBox(height: 16),
-            if (mobile)
-              DropdownButtonFormField<Dentition>(
-                key: const ValueKey('dentition-selector'),
-                isExpanded: true,
-                initialValue: _dentition,
-                decoration: InputDecoration(labelText: l.dentitionLabel),
-                items: [
-                  DropdownMenuItem(
-                    value: Dentition.permanent,
-                    child: Text(l.permanentTeethLabel),
-                  ),
-                  DropdownMenuItem(
-                    value: Dentition.primary,
-                    child: Text(l.primaryTeethLabel),
-                  ),
-                ],
-                onChanged: (value) => setState(() {
-                  _dentition = value!;
-                  _selectedTooth = null;
-                }),
-              )
-            else
-              SegmentedButton<Dentition>(
-                segments: [
-                  ButtonSegment(
-                    value: Dentition.permanent,
-                    label: Text(l.permanentTeethLabel),
-                  ),
-                  ButtonSegment(
-                    value: Dentition.primary,
-                    label: Text(l.primaryTeethLabel),
-                  ),
-                ],
-                selected: {_dentition},
-                onSelectionChanged: (selection) => setState(() {
-                  _dentition = selection.first;
-                  _selectedTooth = null;
-                }),
-              ),
-            const SizedBox(height: 16),
-            if (state.status == OdontogramLoadStatus.loading)
-              const LinearProgressIndicator(),
-            if (state.failure != null) ...[
+        builder: (context, state) {
+          TreatmentPlanState treatmentState = const TreatmentPlanState();
+          try {
+            treatmentState = context.watch<TreatmentPlanCubit>().state;
+          } catch (_) {}
+          final toothTreatmentItems = _selectedTooth == null
+              ? const <TreatmentPlanItem>[]
+              : treatmentState.items
+                  .where((item) => item.toothNumber == _selectedTooth)
+                  .toList(growable: false);
+
+          return ListView(
+            padding: AppInsets.page(AppBreakpoints.of(context)),
+            children: [
+              _PatientHeader(patient: patient),
               const SizedBox(height: 12),
-              _DentalChartMessage(
-                failureMessage(state.failure!, AppLocalizations.of(context)),
-              ),
-            ],
-            const SizedBox(height: 12),
-            _ToothArch(
-              dentition: _dentition,
-              selectedTooth: _selectedTooth,
-              conditions: state.active,
-              onSelected: (tooth) => setState(() => _selectedTooth = tooth),
-            ),
-            if (canEdit) ...[
+              PatientMedicalAlertBanner(patientId: widget.patientId),
+              const SizedBox(height: 16),
+              if (mobile)
+                DropdownButtonFormField<Dentition>(
+                  key: const ValueKey('dentition-selector'),
+                  isExpanded: true,
+                  initialValue: _dentition,
+                  decoration: InputDecoration(labelText: l.dentitionLabel),
+                  items: [
+                    DropdownMenuItem(
+                      value: Dentition.permanent,
+                      child: Text(l.permanentTeethLabel),
+                    ),
+                    DropdownMenuItem(
+                      value: Dentition.primary,
+                      child: Text(l.primaryTeethLabel),
+                    ),
+                  ],
+                  onChanged: (value) => setState(() {
+                    _dentition = value!;
+                    _selectedTooth = null;
+                  }),
+                )
+              else
+                SegmentedButton<Dentition>(
+                  segments: [
+                    ButtonSegment(
+                      value: Dentition.permanent,
+                      label: Text(l.permanentTeethLabel),
+                    ),
+                    ButtonSegment(
+                      value: Dentition.primary,
+                      label: Text(l.primaryTeethLabel),
+                    ),
+                  ],
+                  selected: {_dentition},
+                  onSelectionChanged: (selection) => setState(() {
+                    _dentition = selection.first;
+                    _selectedTooth = null;
+                  }),
+                ),
+              const SizedBox(height: 16),
+              if (state.status == OdontogramLoadStatus.loading)
+                const LinearProgressIndicator(),
+              if (state.failure != null) ...[
+                const SizedBox(height: 12),
+                _DentalChartMessage(
+                  failureMessage(state.failure!, AppLocalizations.of(context)),
+                ),
+              ],
               const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: state.mutating
-                    ? null
-                    : () => _showAddCondition(context, state),
-                icon: const Icon(Icons.add_chart_outlined),
-                label: Text(
-                  _selectedTooth == null
-                      ? l.selectToothToAdd
-                      : l.addConditionToTooth(_selectedTooth!),
+              _ToothArch(
+                dentition: _dentition,
+                selectedTooth: _selectedTooth,
+                conditions: state.active,
+                onSelected: (tooth) => setState(() => _selectedTooth = tooth),
+              ),
+              if (canEdit && _selectedTooth == null) ...[
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: null,
+                  icon: const Icon(Icons.touch_app_outlined),
+                  label: Text(l.selectToothToAdd),
+                ),
+              ],
+              const SizedBox(height: 16),
+              _SelectedToothPanel(
+                toothNumber: _selectedTooth,
+                currencyCode: context
+                        .watch<ClinicCubit>()
+                        .state
+                        .activeClinic
+                        ?.currencyCode ??
+                    'USD',
+                conditions: state.active
+                    .where((condition) => condition.toothNumber == _selectedTooth)
+                    .toList(growable: false),
+                treatmentItems: toothTreatmentItems,
+                procedures: treatmentState.procedures,
+                canEdit: canEdit,
+                mutating: state.mutating || treatmentState.mutating,
+                onResolve: (condition) => _confirmResolve(context, condition),
+                onMarkInError: (condition) =>
+                    _showCorrectionReason(context, condition),
+                onAddCondition: () => _showAddCondition(context, state),
+                onAddTreatment: (procedure) => _showAddProcedureToPlan(
+                  context,
+                  procedure,
+                  _selectedTooth!,
+                ),
+                onSelectProcedureFromCatalogue: () => _showProcedurePicker(
+                  context,
+                  _selectedTooth!,
+                  treatmentState.procedures,
+                ),
+                onSchedule: ({procedureName, durationMinutes}) =>
+                    _scheduleForTooth(
+                  toothNumber: _selectedTooth!,
+                  procedureName: procedureName,
+                  durationMinutes: durationMinutes,
                 ),
               ),
+              const SizedBox(height: 16),
+              _HistorySection(
+                history: state.history,
+                hasMore: state.historyHasMore,
+                loadingMore: state.loadingMore,
+                onLoadMore: () =>
+                    context.read<OdontogramCubit>().loadMoreHistory(),
+              ),
             ],
-            const SizedBox(height: 16),
-            _SelectedToothPanel(
-              toothNumber: _selectedTooth,
-              conditions: state.active
-                  .where((condition) => condition.toothNumber == _selectedTooth)
-                  .toList(growable: false),
-              canEdit: canEdit,
-              mutating: state.mutating,
-              onResolve: (condition) => _confirmResolve(context, condition),
-              onMarkInError: (condition) =>
-                  _showCorrectionReason(context, condition),
-            ),
-            const SizedBox(height: 16),
-            _HistorySection(
-              history: state.history,
-              hasMore: state.historyHasMore,
-              loadingMore: state.loadingMore,
-              onLoadMore: () =>
-                  context.read<OdontogramCubit>().loadMoreHistory(),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -367,6 +409,262 @@ class _DentalChartPageState extends State<DentalChartPage> {
       ),
     );
     reason.dispose();
+  }
+
+  void _scheduleForTooth({
+    required int toothNumber,
+    String? procedureName,
+    int? durationMinutes,
+  }) {
+    final l = AppLocalizations.of(context);
+    final toothTitle = l.toothNumberValue(toothNumber);
+    final purpose = procedureName != null
+        ? '$toothTitle - $procedureName'
+        : toothTitle;
+    context.go(
+      Uri(
+        path: '/appointments/new',
+        queryParameters: {
+          'patientId': widget.patientId,
+          'purpose': purpose,
+          if (durationMinutes != null && durationMinutes > 0)
+            'duration': '$durationMinutes',
+        },
+      ).toString(),
+    );
+  }
+
+  Future<void> _showAddProcedureToPlan(
+    BuildContext context,
+    ClinicProcedure procedure,
+    int toothNumber,
+  ) async {
+    final currency =
+        context.read<ClinicCubit>().state.activeClinic?.currencyCode ?? 'USD';
+    final priceController = TextEditingController(
+      text: procedure.defaultPrice.toDecimalString(),
+    );
+    final notesController = TextEditingController();
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          8,
+          24,
+          MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l.addTreatmentForTooth,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${procedure.name} (${procedure.category}) - ${l.toothNumberValue(toothNumber)}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: priceController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: l.estimatedPriceLabel,
+                  suffixText: currency,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesController,
+                maxLength: 500,
+                decoration: InputDecoration(
+                  labelText: l.planNotesOptional,
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () async {
+                  final price = Money.tryParseUserInput(priceController.text);
+                  if (price == null) return;
+                  final notes = notesController.text.trim();
+                  Navigator.of(sheetContext).pop();
+                  final planCubit = context.read<TreatmentPlanCubit>();
+                  final membership =
+                      context.read<ClinicCubit>().state.activeMembership;
+
+                  var plan =
+                      planCubit.state.selectedPlan ??
+                      planCubit.state.plans.firstOrNull;
+                  final memberId = membership?.memberId;
+                  if (plan == null && memberId != null && memberId.isNotEmpty) {
+                    await planCubit.createPlan(
+                      patientId: widget.patientId,
+                      dentistMemberId: memberId,
+                    );
+                    plan =
+                        planCubit.state.selectedPlan ??
+                        planCubit.state.plans.firstOrNull;
+                  }
+                  if (plan != null) {
+                    final ok = await planCubit.addItem(
+                      plan.id,
+                      TreatmentPlanItemDraft(
+                        procedureId: procedure.id,
+                        toothNumber: toothNumber,
+                        estimatedPrice: price,
+                        description: notes.isEmpty ? null : notes,
+                        assignedDentistId: membership?.memberId,
+                      ),
+                    );
+                    if (ok && context.mounted) {
+                      ScaffoldMessenger.of(context)
+                        ..hideCurrentSnackBar()
+                        ..showSnackBar(
+                          SnackBar(content: Text(l.procedureAddedToPlan)),
+                        );
+                    }
+                  }
+                },
+                child: Text(l.saveLabel),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    priceController.dispose();
+    notesController.dispose();
+  }
+
+  Future<void> _showProcedurePicker(
+    BuildContext context,
+    int toothNumber,
+    List<ClinicProcedure> procedures,
+  ) async {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final currency =
+        context.read<ClinicCubit>().state.activeClinic?.currencyCode ?? 'USD';
+    final active = procedures.where((p) => p.active).toList(growable: false);
+    String query = '';
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          final filtered = query.trim().isEmpty
+              ? active
+              : active
+                    .where(
+                      (p) =>
+                          p.name.toLowerCase().contains(query.toLowerCase()) ||
+                          p.category.toLowerCase().contains(
+                            query.toLowerCase(),
+                          ),
+                    )
+                    .toList(growable: false);
+
+          return SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.7,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  Text(
+                    l.selectProcedureToAdd,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: l.searchProceduresPlaceholder,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onChanged: (value) =>
+                        setSheetState(() => query = value),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filtered.isEmpty
+                        ? Center(
+                            child: Text(
+                              l.noMatchingProcedures,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            itemCount: filtered.length,
+                            separatorBuilder: (context, index) =>
+                                const Divider(height: 1),
+                            itemBuilder: (context, index) {
+                              final p = filtered[index];
+                              return ListTile(
+                                leading: CircleAvatar(
+                                  radius: 16,
+                                  backgroundColor:
+                                      theme.colorScheme.primaryContainer,
+                                  child: Icon(
+                                    Icons.medical_services_outlined,
+                                    size: 16,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                title: Text(
+                                  p.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${p.category} · ${p.durationMinutes} min',
+                                ),
+                                trailing: Text(
+                                  '${p.defaultPrice.toDecimalString()} $currency',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                                onTap: () {
+                                  Navigator.of(sheetContext).pop();
+                                  _showAddProcedureToPlan(
+                                    context,
+                                    p,
+                                    toothNumber,
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   String _issueMessage(OdontogramOperationIssue issue, AppLocalizations l) =>
@@ -1045,52 +1343,416 @@ class _ToothSurfacePainter extends CustomPainter {
       oldDelegate.colorScheme != colorScheme;
 }
 
+List<ClinicProcedure> _suggestedProcedures({
+  required List<ToothCondition> conditions,
+  required List<ClinicProcedure> procedures,
+}) {
+  final activeProcedures = procedures.where((p) => p.active).toList();
+  if (conditions.isEmpty) {
+    return activeProcedures
+        .where((p) {
+          final name = p.name.toLowerCase();
+          final cat = p.category.toLowerCase();
+          return name.contains('exam') ||
+              name.contains('clean') ||
+              name.contains('scaling') ||
+              name.contains('فحص') ||
+              name.contains('تنظيف') ||
+              cat.contains('preventive') ||
+              cat.contains('وقائي');
+        })
+        .take(3)
+        .toList();
+  }
+
+  final suggestions = <ClinicProcedure>{};
+  for (final cond in conditions) {
+    switch (cond.type) {
+      case ToothConditionType.caries:
+        suggestions.addAll(
+          activeProcedures.where((p) {
+            final name = p.name.toLowerCase();
+            final cat = p.category.toLowerCase();
+            return name.contains('composite') ||
+                name.contains('filling') ||
+                name.contains('restor') ||
+                name.contains('حشو') ||
+                name.contains('ترميم') ||
+                name.contains('пломб') ||
+                cat.contains('restor') ||
+                cat.contains('ترميم');
+          }),
+        );
+      case ToothConditionType.rootCanal:
+        suggestions.addAll(
+          activeProcedures.where((p) {
+            final name = p.name.toLowerCase();
+            final cat = p.category.toLowerCase();
+            return name.contains('root canal') ||
+                name.contains('endo') ||
+                name.contains('pulp') ||
+                name.contains('عصب') ||
+                name.contains('جذور') ||
+                name.contains('пульп') ||
+                name.contains('канал') ||
+                cat.contains('endo') ||
+                cat.contains('عصب');
+          }),
+        );
+      case ToothConditionType.fracture:
+      case ToothConditionType.crown:
+        suggestions.addAll(
+          activeProcedures.where((p) {
+            final name = p.name.toLowerCase();
+            final cat = p.category.toLowerCase();
+            return name.contains('crown') ||
+                name.contains('post') ||
+                name.contains('core') ||
+                name.contains('تاج') ||
+                name.contains('تلبيس') ||
+                name.contains('وتد') ||
+                name.contains('коронк') ||
+                cat.contains('prostho') ||
+                cat.contains('تركيب');
+          }),
+        );
+      case ToothConditionType.missing:
+      case ToothConditionType.extractionRequired:
+        suggestions.addAll(
+          activeProcedures.where((p) {
+            final name = p.name.toLowerCase();
+            final cat = p.category.toLowerCase();
+            return name.contains('extract') ||
+                name.contains('implant') ||
+                name.contains('surg') ||
+                name.contains('خلع') ||
+                name.contains('قلع') ||
+                name.contains('زراع') ||
+                name.contains('جراح') ||
+                name.contains('удал') ||
+                name.contains('имплант') ||
+                cat.contains('surg') ||
+                cat.contains('جراح');
+          }),
+        );
+      case ToothConditionType.filling:
+      case ToothConditionType.implant:
+        break;
+    }
+  }
+  return suggestions.take(4).toList();
+}
+
 class _SelectedToothPanel extends StatelessWidget {
   const _SelectedToothPanel({
     required this.toothNumber,
+    required this.currencyCode,
     required this.conditions,
+    required this.treatmentItems,
+    required this.procedures,
     required this.canEdit,
     required this.mutating,
     required this.onResolve,
     required this.onMarkInError,
+    required this.onAddCondition,
+    required this.onAddTreatment,
+    required this.onSelectProcedureFromCatalogue,
+    required this.onSchedule,
   });
+
   final int? toothNumber;
+  final String currencyCode;
   final List<ToothCondition> conditions;
+  final List<TreatmentPlanItem> treatmentItems;
+  final List<ClinicProcedure> procedures;
   final bool canEdit;
   final bool mutating;
   final ValueChanged<ToothCondition> onResolve;
   final ValueChanged<ToothCondition> onMarkInError;
+  final VoidCallback onAddCondition;
+  final ValueChanged<ClinicProcedure> onAddTreatment;
+  final VoidCallback onSelectProcedureFromCatalogue;
+  final void Function({String? procedureName, int? durationMinutes}) onSchedule;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
     if (toothNumber == null) {
       return _DentalChartMessage(l.selectToothReview);
     }
-    if (conditions.isEmpty) {
-      return _DentalChartMessage(l.healthyToothMessage(toothNumber!));
-    }
+
+    final suggestions = _suggestedProcedures(
+      conditions: conditions,
+      procedures: procedures,
+    );
+
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l.toothNumberValue(toothNumber!),
-              style: Theme.of(context).textTheme.titleMedium,
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.medical_services_outlined,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l.toothNumberValue(toothNumber!),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        conditions.isEmpty
+                            ? l.healthyToothMessage(toothNumber!)
+                            : '${conditions.length} ${l.conditionLabel.toLowerCase()}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: conditions.isEmpty
+                              ? Colors.green.shade700
+                              : theme.colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                FilledButton.tonalIcon(
+                  onPressed: () => onSchedule(),
+                  icon: const Icon(Icons.calendar_month, size: 18),
+                  label: Text(l.scheduleAppointmentForTooth),
+                  style: FilledButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            for (final condition in conditions)
-              _ConditionTile(
-                condition: condition,
-                canEdit: canEdit,
-                enabled: !mutating,
-                onResolve: () => onResolve(condition),
-                onMarkInError: () => onMarkInError(condition),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l.conditionLabel,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                if (canEdit)
+                  TextButton.icon(
+                    onPressed: mutating ? null : onAddCondition,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: Text(l.addConditionTitle(toothNumber!)),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+              ],
+            ),
+            if (conditions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 18,
+                      color: Colors.green.shade600,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        l.healthyToothMessage(toothNumber!),
+                        style: TextStyle(color: Colors.green.shade800),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              for (final condition in conditions)
+                _ConditionTile(
+                  condition: condition,
+                  canEdit: canEdit,
+                  enabled: !mutating,
+                  onResolve: () => onResolve(condition),
+                  onMarkInError: () => onMarkInError(condition),
+                ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l.toothTreatmentsTitle(toothNumber!),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                if (canEdit)
+                  TextButton.icon(
+                    onPressed: mutating ? null : onSelectProcedureFromCatalogue,
+                    icon: const Icon(Icons.playlist_add, size: 16),
+                    label: Text(l.addTreatmentForTooth),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+              ],
+            ),
+            if (treatmentItems.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  l.noTreatmentsPlannedForTooth,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              )
+            else
+              for (final item in treatmentItems) ...[
+                _ToothTreatmentItemTile(
+                  item: item,
+                  currencyCode: currencyCode,
+                  procedure: procedures
+                      .where((p) => p.id == item.procedureId)
+                      .firstOrNull,
+                  onSchedule: (name, duration) => onSchedule(
+                    procedureName: name,
+                    durationMinutes: duration,
+                  ),
+                ),
+                const SizedBox(height: 6),
+              ],
+            if (suggestions.isNotEmpty && canEdit) ...[
+              const SizedBox(height: 12),
+              Text(
+                l.suggestedTreatmentsTitle,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final proc in suggestions)
+                    ActionChip(
+                      avatar: const Icon(Icons.add, size: 14),
+                      label: Text(
+                        '${proc.name} · ${proc.defaultPrice.toDecimalString()} $currencyCode',
+                      ),
+                      onPressed: mutating ? null : () => onAddTreatment(proc),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ToothTreatmentItemTile extends StatelessWidget {
+  const _ToothTreatmentItemTile({
+    required this.item,
+    required this.currencyCode,
+    required this.procedure,
+    required this.onSchedule,
+  });
+
+  final TreatmentPlanItem item;
+  final String currencyCode;
+  final ClinicProcedure? procedure;
+  final void Function(String name, int? duration) onSchedule;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final name = procedure?.name ?? item.description ?? l.procedureLabel;
+    final duration = procedure?.durationMinutes;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.medical_information_outlined,
+            size: 20,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  '${item.status.label} · ${item.estimatedPrice.toDecimalString()} $currencyCode',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: () => onSchedule(name, duration),
+            icon: const Icon(Icons.event, size: 16),
+            label: Text(l.scheduleThisProcedure),
+            style: OutlinedButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            ),
+          ),
+        ],
       ),
     );
   }

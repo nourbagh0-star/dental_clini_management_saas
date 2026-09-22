@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -68,6 +69,16 @@ class _PatientFilesPageState extends State<PatientFilesPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.patientFilesTitle),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/patients/${widget.patientId}');
+            }
+          },
+        ),
         actions: [
           if (canUpload)
             IconButton(

@@ -308,6 +308,11 @@ abstract final class AppRouter {
               path: '/appointments/new',
               builder: (_, state) => NewAppointmentPage(
                 initialPatientId: state.uri.queryParameters['patientId'],
+                initialPurpose: state.uri.queryParameters['purpose'],
+                initialDurationMinutes: int.tryParse(
+                  state.uri.queryParameters['duration'] ?? '',
+                ),
+                initialDentistMemberId: state.uri.queryParameters['dentistId'],
               ),
             ),
             GoRoute(

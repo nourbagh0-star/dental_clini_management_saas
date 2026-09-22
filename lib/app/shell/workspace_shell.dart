@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -9,7 +10,7 @@ import '../localization/generated/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'workspace_destination.dart';
 
-class WorkspaceShell extends StatelessWidget {
+class WorkspaceShell extends StatefulWidget {
   const WorkspaceShell({
     required this.location,
     required this.child,
@@ -20,24 +21,84 @@ class WorkspaceShell extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => BlocBuilder<ClinicCubit, ClinicState>(
-    builder: (context, clinicState) {
-      final membership = clinicState.activeMembership;
-      if (membership == null) return child;
-      final authState = context.watch<AuthBloc>().state;
-      return WorkspaceNavigation(
-        location: location,
-        membership: membership,
-        email: authState.identity?.email ?? authState.email,
-        onNavigate: context.go,
-        onSwitchClinic: clinicState.memberships.length > 1
-            ? () => context.go('/clinics/select')
-            : null,
-        onLock: () => context.read<AuthBloc>().add(AuthLockRequested()),
-        onSignOut: () => context.read<AuthBloc>().add(AuthLogoutRequested()),
-        child: child,
-      );
+  State<WorkspaceShell> createState() => _WorkspaceShellState();
+}
+
+class _WorkspaceShellState extends State<WorkspaceShell> {
+  final List<String> _history = [];
+  DateTime? _lastBackPress;
+
+  @override
+  void didUpdateWidget(covariant WorkspaceShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.location != widget.location) {
+      if (_history.isEmpty || _history.last != oldWidget.location) {
+        _history.add(oldWidget.location);
+        if (_history.length > 30) {
+          _history.removeAt(0);
+        }
+      }
+    }
+  }
+
+  void _handleBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+    if (widget.location != '/dashboard') {
+      while (_history.isNotEmpty && _history.last == widget.location) {
+        _history.removeLast();
+      }
+      final previous =
+          _history.isNotEmpty ? _history.removeLast() : '/dashboard';
+      context.go(previous);
+      return;
+    }
+    final now = DateTime.now();
+    if (_lastBackPress != null &&
+        now.difference(_lastBackPress!) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+    } else {
+      _lastBackPress = now;
+      final l = AppLocalizations.of(context);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(l.pressBackAgainToExit),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, _) {
+      if (didPop) return;
+      _handleBack();
     },
+    child: BlocBuilder<ClinicCubit, ClinicState>(
+      builder: (context, clinicState) {
+        final membership = clinicState.activeMembership;
+        if (membership == null) return widget.child;
+        final authState = context.watch<AuthBloc>().state;
+        return WorkspaceNavigation(
+          location: widget.location,
+          membership: membership,
+          email: authState.identity?.email ?? authState.email,
+          onNavigate: context.go,
+          onSwitchClinic: clinicState.memberships.length > 1
+              ? () => context.go('/clinics/select')
+              : null,
+          onLock: () => context.read<AuthBloc>().add(AuthLockRequested()),
+          onSignOut: () => context.read<AuthBloc>().add(AuthLogoutRequested()),
+          child: widget.child,
+        );
+      },
+    ),
   );
 }
 

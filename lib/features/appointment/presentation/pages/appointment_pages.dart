@@ -83,7 +83,7 @@ class _AppointmentCalendarPageState extends State<AppointmentCalendarPage> {
       appBar: AppBar(
         title: Text(l.appointmentsWithTimeZone(clinic.timeZone)),
         leading: IconButton(
-          onPressed: () => context.go('/clinic-gate'),
+          onPressed: () => context.go('/dashboard'),
           icon: const Icon(Icons.arrow_back),
         ),
         actions: [
@@ -201,8 +201,18 @@ class _AppointmentCalendarPageState extends State<AppointmentCalendarPage> {
 }
 
 class NewAppointmentPage extends StatefulWidget {
-  const NewAppointmentPage({this.initialPatientId, super.key});
+  const NewAppointmentPage({
+    this.initialPatientId,
+    this.initialPurpose,
+    this.initialDurationMinutes,
+    this.initialDentistMemberId,
+    super.key,
+  });
+
   final String? initialPatientId;
+  final String? initialPurpose;
+  final int? initialDurationMinutes;
+  final String? initialDentistMemberId;
 
   @override
   State<NewAppointmentPage> createState() => _NewAppointmentPageState();
@@ -224,6 +234,14 @@ class _NewAppointmentPageState extends State<NewAppointmentPage> {
   void initState() {
     super.initState();
     _patientId = widget.initialPatientId;
+    if (widget.initialPurpose != null && widget.initialPurpose!.isNotEmpty) {
+      _purpose.text = widget.initialPurpose!;
+    }
+    if (widget.initialDurationMinutes != null &&
+        widget.initialDurationMinutes! > 0) {
+      _duration = widget.initialDurationMinutes!;
+    }
+    _dentistMemberId = widget.initialDentistMemberId;
     tz_data.initializeTimeZones();
   }
 
@@ -304,7 +322,19 @@ class _NewAppointmentPageState extends State<NewAppointmentPage> {
               .toList(growable: false);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.newAppointmentLabel)),
+      appBar: AppBar(
+        title: Text(l.newAppointmentLabel),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/appointments');
+            }
+          },
+        ),
+      ),
       body: ListView(
         padding: AppInsets.page(AppBreakpoints.of(context)),
         children: [

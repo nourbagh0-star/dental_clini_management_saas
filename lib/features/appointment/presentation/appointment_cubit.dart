@@ -54,30 +54,48 @@ class AppointmentState {
 class AppointmentCubit extends Cubit<AppointmentState> {
   AppointmentCubit(this._repository) : super(const AppointmentState());
   final AppointmentRepository _repository;
+  final Map<String, List<Appointment>> _rangeCache = {};
   int _request = 0;
 
   Future<void> load({
     required String clinicId,
     required DateTime from,
     required DateTime until,
+    bool force = false,
   }) async {
     final request = ++_request;
-    emit(
-      state.copyWith(
-        status: AppointmentLoadStatus.loading,
-        clinicId: clinicId,
-        from: from,
-        until: until,
-        clearFailure: true,
-        clearIssue: true,
-      ),
-    );
+    final cacheKey =
+        '$clinicId:${from.millisecondsSinceEpoch}:${until.millisecondsSinceEpoch}';
+    final cached = _rangeCache[cacheKey];
+    if (cached != null && !force) {
+      emit(
+        state.copyWith(
+          status: AppointmentLoadStatus.ready,
+          clinicId: clinicId,
+          from: from,
+          until: until,
+          appointments: cached,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          status: AppointmentLoadStatus.loading,
+          clinicId: clinicId,
+          from: from,
+          until: until,
+          clearFailure: true,
+          clearIssue: true,
+        ),
+      );
+    }
     try {
       final appointments = await _repository.listRange(
         clinicId: clinicId,
         from: from,
         until: until,
       );
+      _rangeCache[cacheKey] = appointments;
       if (!isClosed && request == _request) {
         emit(
           AppointmentState(
@@ -90,11 +108,11 @@ class AppointmentCubit extends Cubit<AppointmentState> {
         );
       }
     } on AppointmentOperationException catch (error) {
-      _issue(request, error.issue);
+      if (cached == null || force) _issue(request, error.issue);
     } on AppFailure catch (error) {
-      _failure(request, error);
+      if (cached == null || force) _failure(request, error);
     } on Object {
-      _failure(request, const UnknownFailure());
+      if (cached == null || force) _failure(request, const UnknownFailure());
     }
   }
 
@@ -149,7 +167,7 @@ class AppointmentCubit extends Cubit<AppointmentState> {
     try {
       await action();
       if (isClosed || request != _request) return false;
-      await load(clinicId: clinicId, from: from, until: until);
+      await load(clinicId: clinicId, from: from, until: until, force: true);
       return state.status == AppointmentLoadStatus.ready;
     } on AppointmentOperationException catch (error) {
       _issue(request, error.issue, mutating: false);

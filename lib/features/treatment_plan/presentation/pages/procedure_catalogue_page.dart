@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/localization/generated/app_localizations.dart';
 import '../../../../app/theme/app_theme.dart';
@@ -61,12 +62,16 @@ class _ProcedureCataloguePageState extends State<ProcedureCataloguePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.procedureCatalogueTitle),
-        leading: Navigator.canPop(context)
-            ? IconButton(
-                onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back),
-              )
-            : null,
+        leading: IconButton(
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/dashboard');
+            }
+          },
+          icon: const Icon(Icons.arrow_back),
+        ),
       ),
       floatingActionButton: canManage
           ? FloatingActionButton.extended(

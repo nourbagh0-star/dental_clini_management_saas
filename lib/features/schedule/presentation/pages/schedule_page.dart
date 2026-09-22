@@ -42,7 +42,7 @@ class _DoctorSchedulePageState extends State<DoctorSchedulePage> {
         title: Text(l.doctorScheduleTitle),
         leading: IconButton(
           tooltip: l.backLabel,
-          onPressed: () => context.go('/clinic-gate'),
+          onPressed: () => context.go('/dashboard'),
           icon: const Icon(Icons.arrow_back),
         ),
       ),

@@ -754,5 +754,19 @@
   }
   ,"noMatchingProcedures": "No procedures match your search or filter."
   ,"clearFiltersLabel": "Clear filters"
+  ,"pressBackAgainToExit": "Press back again to exit"
+  ,"toothTreatmentsTitle": "Treatments for Tooth {toothNumber}"
+  ,"@toothTreatmentsTitle": {
+    "placeholders": {
+      "toothNumber": {"type": "int"}
+    }
+  }
+  ,"noTreatmentsPlannedForTooth": "No treatments currently planned for this tooth."
+  ,"suggestedTreatmentsTitle": "Suggested Procedures"
+  ,"addTreatmentForTooth": "Add Planned Treatment"
+  ,"scheduleAppointmentForTooth": "Schedule Appointment"
+  ,"scheduleThisProcedure": "Book Appointment"
+  ,"procedureAddedToPlan": "Procedure added to treatment plan."
+  ,"selectProcedureToAdd": "Select Procedure from Catalogue"
 }
 

@@ -70,7 +70,7 @@ class _BillingPageState extends State<BillingPage> {
         ),
         leading: IconButton(
           onPressed: () => widget.patientId == null
-              ? context.go('/clinic-gate')
+              ? context.go('/dashboard')
               : context.go('/patients/${widget.patientId}'),
           icon: const Icon(Icons.arrow_back),
         ),

@@ -2274,4 +2274,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get clearFiltersLabel => 'Clear filters';
+
+  @override
+  String get pressBackAgainToExit => 'Press back again to exit';
+
+  @override
+  String toothTreatmentsTitle(int toothNumber) {
+    return 'Treatments for Tooth $toothNumber';
+  }
+
+  @override
+  String get noTreatmentsPlannedForTooth =>
+      'No treatments currently planned for this tooth.';
+
+  @override
+  String get suggestedTreatmentsTitle => 'Suggested Procedures';
+
+  @override
+  String get addTreatmentForTooth => 'Add Planned Treatment';
+
+  @override
+  String get scheduleAppointmentForTooth => 'Schedule Appointment';
+
+  @override
+  String get scheduleThisProcedure => 'Book Appointment';
+
+  @override
+  String get procedureAddedToPlan => 'Procedure added to treatment plan.';
+
+  @override
+  String get selectProcedureToAdd => 'Select Procedure from Catalogue';
 }

@@ -66,6 +66,16 @@ class _AuditLogPageState extends State<AuditLogPage> {
         return Scaffold(
           appBar: AppBar(
             title: Text(l.auditTitle),
+            leading: IconButton(
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                } else {
+                  context.go('/dashboard');
+                }
+              },
+              icon: const Icon(Icons.arrow_back),
+            ),
             actions: [
               if (clinicState.memberships.length > 1)
                 IconButton(

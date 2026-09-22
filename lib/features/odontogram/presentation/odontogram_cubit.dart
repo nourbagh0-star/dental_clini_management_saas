@@ -60,24 +60,52 @@ class OdontogramCubit extends Cubit<OdontogramState> {
   OdontogramCubit(this._repository) : super(const OdontogramState());
   final OdontogramRepository _repository;
   static const _pageSize = 25;
+  final Map<
+    String,
+    ({
+      List<ToothCondition> active,
+      List<ToothCondition> history,
+      bool historyHasMore,
+    })
+  >
+  _cache = {};
   int _request = 0;
 
-  Future<void> load(String patientId) async {
+  Future<void> load(String patientId, {bool force = false}) async {
     final request = ++_request;
-    emit(
-      state.copyWith(
-        status: OdontogramLoadStatus.loading,
-        patientId: patientId,
-        clearFailure: true,
-        clearIssue: true,
-      ),
-    );
+    final cached = _cache[patientId];
+    if (cached != null && !force) {
+      emit(
+        OdontogramState(
+          status: OdontogramLoadStatus.ready,
+          patientId: patientId,
+          active: cached.active,
+          history: cached.history,
+          historyHasMore: cached.historyHasMore,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          status: OdontogramLoadStatus.loading,
+          patientId: patientId,
+          clearFailure: true,
+          clearIssue: true,
+        ),
+      );
+    }
     try {
       final active = await _repository.activeConditions(patientId);
       final history = await _repository.history(
         patientId: patientId,
         offset: 0,
         limit: _pageSize,
+      );
+      final hasMore = history.length == _pageSize;
+      _cache[patientId] = (
+        active: active,
+        history: history,
+        historyHasMore: hasMore,
       );
       if (!isClosed && request == _request) {
         emit(
@@ -86,16 +114,18 @@ class OdontogramCubit extends Cubit<OdontogramState> {
             patientId: patientId,
             active: active,
             history: history,
-            historyHasMore: history.length == _pageSize,
+            historyHasMore: hasMore,
           ),
         );
       }
     } on OdontogramOperationException catch (error) {
-      _issue(request, error.issue);
+      if (cached == null || force) _issue(request, error.issue);
     } on AppFailure catch (error) {
-      _failure(request, error);
+      if (cached == null || force) _failure(request, error);
     } on Object {
-      _failure(request, const UnknownFailure());
+      if (cached == null || force) {
+        _failure(request, const UnknownFailure());
+      }
     }
   }
 
@@ -158,7 +188,7 @@ class OdontogramCubit extends Cubit<OdontogramState> {
     try {
       await action();
       if (isClosed || request != _request) return false;
-      await load(patientId);
+      await load(patientId, force: true);
       return state.status == OdontogramLoadStatus.ready;
     } on OdontogramOperationException catch (error) {
       _issue(request, error.issue, mutating: false);

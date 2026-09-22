@@ -2250,4 +2250,34 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get clearFiltersLabel => 'إعادة ضبط التصفية';
+
+  @override
+  String get pressBackAgainToExit => 'اضغط رجوع مرة أخرى للخروج من التطبيق';
+
+  @override
+  String toothTreatmentsTitle(int toothNumber) {
+    return 'العلاجات للسن $toothNumber';
+  }
+
+  @override
+  String get noTreatmentsPlannedForTooth =>
+      'لا توجد علاجات مجدولة لهذا السن حالياً.';
+
+  @override
+  String get suggestedTreatmentsTitle => 'الإجراءات المقترحة';
+
+  @override
+  String get addTreatmentForTooth => 'إضافة علاج مخطط لهذا السن';
+
+  @override
+  String get scheduleAppointmentForTooth => 'حجز موعد';
+
+  @override
+  String get scheduleThisProcedure => 'حجز موعد للإجراء';
+
+  @override
+  String get procedureAddedToPlan => 'تمت إضافة الإجراء إلى خطة العلاج بنجاح.';
+
+  @override
+  String get selectProcedureToAdd => 'اختر إجراء من قائمة العيادة';
 }

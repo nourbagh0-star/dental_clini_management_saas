@@ -47,7 +47,7 @@ class _PatientsPageState extends State<PatientsPage> {
       appBar: AppBar(
         title: Text(l.patientsTitle),
         leading: IconButton(
-          onPressed: () => context.go('/clinic-gate'),
+          onPressed: () => context.go('/dashboard'),
           icon: const Icon(Icons.arrow_back),
         ),
       ),
@@ -244,7 +244,19 @@ class _NewPatientPageState extends State<NewPatientPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l.newPatientLabel)),
+      appBar: AppBar(
+        title: Text(l.newPatientLabel),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/patients');
+            }
+          },
+        ),
+      ),
       body: BlocConsumer<PatientCubit, PatientState>(
         listenWhen: (before, after) =>
             before.mutating &&
@@ -798,6 +810,16 @@ class PatientProfilePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l.patientProfileTitle),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/patients');
+            }
+          },
+        ),
         actions: [
           if (isOwner)
             IconButton(
@@ -1413,6 +1435,10 @@ class _PatientMedicalPageState extends State<PatientMedicalPage> {
     }
     return WorkspacePage(
       title: Text(l.medicalProfileTitle),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () => context.go('/patients/${widget.patientId}'),
+      ),
       maximumWidth: AppSpacing.contentWidth,
       scrollable: true,
       child: BlocBuilder<PatientMedicalCubit, PatientMedicalState>(

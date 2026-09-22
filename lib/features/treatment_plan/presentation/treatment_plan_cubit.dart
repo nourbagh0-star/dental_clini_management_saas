@@ -75,19 +75,41 @@ class TreatmentPlanCubit extends Cubit<TreatmentPlanState> {
   TreatmentPlanCubit(this._repository) : super(const TreatmentPlanState());
 
   final TreatmentPlanRepository _repository;
+  final Map<String, List<ClinicProcedure>> _catalogueCache = {};
+  final Map<
+    String,
+    ({
+      List<TreatmentPlan> plans,
+      String? selectedPlanId,
+      List<TreatmentPlanItem> items,
+    })
+  >
+  _patientPlansCache = {};
   int _request = 0;
 
   Future<void> loadCatalogue(String clinicId) async {
     final request = ++_request;
-    emit(
-      TreatmentPlanState(
-        status: TreatmentPlanLoadStatus.loading,
-        clinicId: clinicId,
-        procedures: state.clinicId == clinicId ? state.procedures : const [],
-      ),
-    );
+    final cached = _catalogueCache[clinicId];
+    if (cached != null) {
+      emit(
+        TreatmentPlanState(
+          status: TreatmentPlanLoadStatus.ready,
+          clinicId: clinicId,
+          procedures: cached,
+        ),
+      );
+    } else {
+      emit(
+        TreatmentPlanState(
+          status: TreatmentPlanLoadStatus.loading,
+          clinicId: clinicId,
+          procedures: state.clinicId == clinicId ? state.procedures : const [],
+        ),
+      );
+    }
     try {
       final procedures = await _repository.procedures(clinicId);
+      _catalogueCache[clinicId] = procedures;
       if (!isClosed && request == _request) {
         emit(
           TreatmentPlanState(
@@ -98,21 +120,40 @@ class TreatmentPlanCubit extends Cubit<TreatmentPlanState> {
         );
       }
     } on AppFailure catch (error) {
-      _failure(request, error);
+      if (cached == null) _failure(request, error);
     } on Object {
-      _failure(request, const UnknownFailure());
+      if (cached == null) _failure(request, const UnknownFailure());
     }
   }
 
   Future<void> loadPatient(String clinicId, String patientId) async {
     final request = ++_request;
-    emit(
-      TreatmentPlanState(
-        status: TreatmentPlanLoadStatus.loading,
-        clinicId: clinicId,
-        patientId: patientId,
-      ),
-    );
+    final cachedProcedures = _catalogueCache[clinicId];
+    final cachedPlans = _patientPlansCache[patientId];
+    if (cachedPlans != null) {
+      emit(
+        TreatmentPlanState(
+          status: TreatmentPlanLoadStatus.ready,
+          clinicId: clinicId,
+          patientId: patientId,
+          procedures: cachedProcedures ?? state.procedures,
+          plans: cachedPlans.plans,
+          selectedPlanId: cachedPlans.selectedPlanId,
+          items: cachedPlans.items,
+        ),
+      );
+    } else {
+      emit(
+        TreatmentPlanState(
+          status: TreatmentPlanLoadStatus.loading,
+          clinicId: clinicId,
+          patientId: patientId,
+          procedures:
+              cachedProcedures ??
+              (state.clinicId == clinicId ? state.procedures : const []),
+        ),
+      );
+    }
     try {
       final result = await Future.wait<Object>([
         _repository.procedures(clinicId),
@@ -121,10 +162,16 @@ class TreatmentPlanCubit extends Cubit<TreatmentPlanState> {
       if (isClosed || request != _request) return;
       final procedures = result[0] as List<ClinicProcedure>;
       final plans = result[1] as List<TreatmentPlan>;
+      _catalogueCache[clinicId] = procedures;
       final selectedPlanId = _preferredPlanId(plans);
       final items = selectedPlanId == null
           ? const <TreatmentPlanItem>[]
           : await _repository.items(selectedPlanId);
+      _patientPlansCache[patientId] = (
+        plans: plans,
+        selectedPlanId: selectedPlanId,
+        items: items,
+      );
       if (!isClosed && request == _request) {
         emit(
           TreatmentPlanState(
@@ -139,11 +186,11 @@ class TreatmentPlanCubit extends Cubit<TreatmentPlanState> {
         );
       }
     } on TreatmentPlanOperationException catch (error) {
-      _issue(request, error.issue);
+      if (cachedPlans == null) _issue(request, error.issue);
     } on AppFailure catch (error) {
-      _failure(request, error);
+      if (cachedPlans == null) _failure(request, error);
     } on Object {
-      _failure(request, const UnknownFailure());
+      if (cachedPlans == null) _failure(request, const UnknownFailure());
     }
   }
 
@@ -268,6 +315,12 @@ class TreatmentPlanCubit extends Cubit<TreatmentPlanState> {
     final items = selectedPlanId == null
         ? const <TreatmentPlanItem>[]
         : await _repository.items(selectedPlanId);
+    _catalogueCache[clinicId] = procedures;
+    _patientPlansCache[patientId] = (
+      plans: plans,
+      selectedPlanId: selectedPlanId,
+      items: items,
+    );
     if (!isClosed) {
       emit(
         TreatmentPlanState(

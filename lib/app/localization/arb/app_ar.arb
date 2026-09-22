@@ -728,4 +728,18 @@
   }
   ,"noMatchingProcedures": "لا توجد خدمات تطابق البحث أو التصفية الحالية."
   ,"clearFiltersLabel": "إعادة ضبط التصفية"
+  ,"pressBackAgainToExit": "اضغط رجوع مرة أخرى للخروج من التطبيق"
+  ,"toothTreatmentsTitle": "العلاجات للسن {toothNumber}"
+  ,"@toothTreatmentsTitle": {
+    "placeholders": {
+      "toothNumber": {"type": "int"}
+    }
+  }
+  ,"noTreatmentsPlannedForTooth": "لا توجد علاجات مجدولة لهذا السن حالياً."
+  ,"suggestedTreatmentsTitle": "الإجراءات المقترحة"
+  ,"addTreatmentForTooth": "إضافة علاج مخطط لهذا السن"
+  ,"scheduleAppointmentForTooth": "حجز موعد"
+  ,"scheduleThisProcedure": "حجز موعد للإجراء"
+  ,"procedureAddedToPlan": "تمت إضافة الإجراء إلى خطة العلاج بنجاح."
+  ,"selectProcedureToAdd": "اختر إجراء من قائمة العيادة"
 }

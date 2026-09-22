@@ -729,4 +729,18 @@
   }
   ,"noMatchingProcedures": "Нет процедур, соответствующих поиску или фильтрам."
   ,"clearFiltersLabel": "Сбросить фильтры"
+  ,"pressBackAgainToExit": "Нажмите назад еще раз для выхода"
+  ,"toothTreatmentsTitle": "Лечение зуба {toothNumber}"
+  ,"@toothTreatmentsTitle": {
+    "placeholders": {
+      "toothNumber": {"type": "int"}
+    }
+  }
+  ,"noTreatmentsPlannedForTooth": "Для этого зуба пока нет запланированного лечения."
+  ,"suggestedTreatmentsTitle": "Рекомендуемые процедуры"
+  ,"addTreatmentForTooth": "Добавить запланированное лечение"
+  ,"scheduleAppointmentForTooth": "Записаться на прием"
+  ,"scheduleThisProcedure": "Записать на эту процедуру"
+  ,"procedureAddedToPlan": "Процедура добавлена в план лечения."
+  ,"selectProcedureToAdd": "Выберите процедуру из справочника"
 }

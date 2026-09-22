@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../app/theme/app_tokens.dart';
 
@@ -8,6 +9,8 @@ class WorkspacePage extends StatelessWidget {
     required this.child,
     this.actions = const [],
     this.leading,
+    this.onBack,
+    this.showBackButton = true,
     this.floatingActionButton,
     this.maximumWidth = AppSpacing.wideContentWidth,
     this.scrollable = false,
@@ -18,6 +21,8 @@ class WorkspacePage extends StatelessWidget {
   final Widget child;
   final List<Widget> actions;
   final Widget? leading;
+  final VoidCallback? onBack;
+  final bool showBackButton;
   final Widget? floatingActionButton;
   final double maximumWidth;
   final bool scrollable;
@@ -32,8 +37,29 @@ class WorkspacePage extends StatelessWidget {
       ),
     );
     if (scrollable) content = SingleChildScrollView(child: content);
+
+    Widget? effectiveLeading = leading;
+    if (effectiveLeading == null && showBackButton) {
+      effectiveLeading = IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () {
+          if (onBack != null) {
+            onBack!();
+          } else if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          } else {
+            context.go('/dashboard');
+          }
+        },
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(title: title, leading: leading, actions: actions),
+      appBar: AppBar(
+        title: title,
+        leading: effectiveLeading,
+        actions: actions,
+      ),
       floatingActionButton: floatingActionButton,
       body: SafeArea(
         top: false,

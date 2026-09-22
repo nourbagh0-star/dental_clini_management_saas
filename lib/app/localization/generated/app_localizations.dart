@@ -4227,6 +4227,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear filters'**
   String get clearFiltersLabel;
+
+  /// No description provided for @pressBackAgainToExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Press back again to exit'**
+  String get pressBackAgainToExit;
+
+  /// No description provided for @toothTreatmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Treatments for Tooth {toothNumber}'**
+  String toothTreatmentsTitle(int toothNumber);
+
+  /// No description provided for @noTreatmentsPlannedForTooth.
+  ///
+  /// In en, this message translates to:
+  /// **'No treatments currently planned for this tooth.'**
+  String get noTreatmentsPlannedForTooth;
+
+  /// No description provided for @suggestedTreatmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested Procedures'**
+  String get suggestedTreatmentsTitle;
+
+  /// No description provided for @addTreatmentForTooth.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Planned Treatment'**
+  String get addTreatmentForTooth;
+
+  /// No description provided for @scheduleAppointmentForTooth.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule Appointment'**
+  String get scheduleAppointmentForTooth;
+
+  /// No description provided for @scheduleThisProcedure.
+  ///
+  /// In en, this message translates to:
+  /// **'Book Appointment'**
+  String get scheduleThisProcedure;
+
+  /// No description provided for @procedureAddedToPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Procedure added to treatment plan.'**
+  String get procedureAddedToPlan;
+
+  /// No description provided for @selectProcedureToAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Procedure from Catalogue'**
+  String get selectProcedureToAdd;
 }
 
 class _AppLocalizationsDelegate

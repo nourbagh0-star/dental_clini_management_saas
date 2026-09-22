@@ -2278,4 +2278,34 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get clearFiltersLabel => 'Сбросить фильтры';
+
+  @override
+  String get pressBackAgainToExit => 'Нажмите назад еще раз для выхода';
+
+  @override
+  String toothTreatmentsTitle(int toothNumber) {
+    return 'Лечение зуба $toothNumber';
+  }
+
+  @override
+  String get noTreatmentsPlannedForTooth =>
+      'Для этого зуба пока нет запланированного лечения.';
+
+  @override
+  String get suggestedTreatmentsTitle => 'Рекомендуемые процедуры';
+
+  @override
+  String get addTreatmentForTooth => 'Добавить запланированное лечение';
+
+  @override
+  String get scheduleAppointmentForTooth => 'Записаться на прием';
+
+  @override
+  String get scheduleThisProcedure => 'Записать на эту процедуру';
+
+  @override
+  String get procedureAddedToPlan => 'Процедура добавлена в план лечения.';
+
+  @override
+  String get selectProcedureToAdd => 'Выберите процедуру из справочника';
 }

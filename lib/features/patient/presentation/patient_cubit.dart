@@ -50,24 +50,43 @@ class PatientState {
 class PatientCubit extends Cubit<PatientState> {
   PatientCubit(this._repository) : super(const PatientState());
   final PatientRepository _repository;
+  final Map<String, List<Patient>> _cache = {};
   int _request = 0;
 
-  Future<void> load(String clinicId, {String query = ''}) async {
+  Future<void> load(
+    String clinicId, {
+    String query = '',
+    bool force = false,
+  }) async {
     final request = ++_request;
-    emit(
-      state.copyWith(
-        status: PatientStatus.loading,
-        clinicId: clinicId,
-        query: query,
-        clearFailure: true,
-        clearIssue: true,
-      ),
-    );
+    final cacheKey = '$clinicId:$query';
+    final cached = _cache[cacheKey];
+    if (cached != null && !force) {
+      emit(
+        PatientState(
+          status: PatientStatus.ready,
+          clinicId: clinicId,
+          query: query,
+          patients: cached,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          status: PatientStatus.loading,
+          clinicId: clinicId,
+          query: query,
+          clearFailure: true,
+          clearIssue: true,
+        ),
+      );
+    }
     try {
       final patients = await _repository.search(
         clinicId: clinicId,
         query: query,
       );
+      _cache[cacheKey] = patients;
       if (!isClosed && request == _request) {
         emit(
           PatientState(
@@ -79,11 +98,11 @@ class PatientCubit extends Cubit<PatientState> {
         );
       }
     } on PatientOperationException catch (error) {
-      _issue(request, error.issue);
+      if (cached == null || force) _issue(request, error.issue);
     } on AppFailure catch (error) {
-      _failure(request, error);
+      if (cached == null || force) _failure(request, error);
     } on Object {
-      _failure(request, const UnknownFailure());
+      if (cached == null || force) _failure(request, const UnknownFailure());
     }
   }
 
@@ -95,7 +114,7 @@ class PatientCubit extends Cubit<PatientState> {
     try {
       await _repository.create(clinicId: clinicId, input: draft);
       if (isClosed || request != _request) return false;
-      await load(clinicId, query: state.query);
+      await load(clinicId, query: state.query, force: true);
       return state.status == PatientStatus.ready;
     } on PatientOperationException catch (error) {
       _issue(request, error.issue, mutating: false);
@@ -118,7 +137,7 @@ class PatientCubit extends Cubit<PatientState> {
         isArchived: isArchived,
       );
       if (isClosed || request != _request) return false;
-      await load(clinicId, query: state.query);
+      await load(clinicId, query: state.query, force: true);
       return state.status == PatientStatus.ready;
     } on PatientOperationException catch (error) {
       _issue(request, error.issue, mutating: false);
