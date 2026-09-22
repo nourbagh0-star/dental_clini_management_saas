@@ -75,37 +75,114 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             );
           },
-          builder: (context, state) => Scaffold(
-            appBar: AppBar(
-              title: Text(AppLocalizations.of(context).dashboardTitle),
-              actions: [
-                if (clinicState.activeMembership?.isOwner ?? false)
+          builder: (context, state) {
+            final roles =
+                clinicState.activeMembership?.roles ?? const <String>{};
+            final canCreate = roles.contains('owner') ||
+                roles.contains('receptionist') ||
+                roles.contains('dentist');
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(AppLocalizations.of(context).dashboardTitle),
+                actions: [
+                  if (clinicState.activeMembership?.isOwner ?? false)
+                    IconButton(
+                      tooltip: AppLocalizations.of(context).auditOpen,
+                      onPressed: () => context.go('/audit'),
+                      icon: const Icon(Icons.policy_outlined),
+                    ),
+                  if (clinicState.memberships.length > 1)
+                    IconButton(
+                      tooltip: AppLocalizations.of(context).switchClinicLabel,
+                      onPressed: () => context.go('/clinics/select'),
+                      icon: const Icon(Icons.swap_horiz),
+                    ),
                   IconButton(
-                    tooltip: AppLocalizations.of(context).auditOpen,
-                    onPressed: () => context.go('/audit'),
-                    icon: const Icon(Icons.policy_outlined),
+                    tooltip: AppLocalizations.of(context).dashboardRefresh,
+                    onPressed: state.snapshot == null || state.refreshing
+                        ? null
+                        : context.read<DashboardCubit>().refresh,
+                    icon: const Icon(Icons.refresh),
                   ),
-                if (clinicState.memberships.length > 1)
-                  IconButton(
-                    tooltip: AppLocalizations.of(context).switchClinicLabel,
-                    onPressed: () => context.go('/clinics/select'),
-                    icon: const Icon(Icons.swap_horiz),
-                  ),
-                IconButton(
-                  tooltip: AppLocalizations.of(context).dashboardRefresh,
-                  onPressed: state.snapshot == null || state.refreshing
-                      ? null
-                      : context.read<DashboardCubit>().refresh,
-                  icon: const Icon(Icons.refresh),
-                ),
-              ],
-            ),
-            body: _body(context, clinic, state),
-          ),
+                ],
+              ),
+              floatingActionButton: canCreate
+                  ? FloatingActionButton.extended(
+                      tooltip: AppLocalizations.of(context).quickActions,
+                      onPressed: () => _showQuickActions(context),
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(AppLocalizations.of(context).quickActions),
+                    )
+                  : null,
+              body: _body(context, clinic, state),
+            );
+          },
         );
       },
     ),
   );
+
+  Future<void> _showQuickActions(BuildContext context) async {
+    unawaited(HapticFeedback.lightImpact());
+    final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              child: Text(
+                l.quickActions,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: theme.colorScheme.primaryContainer,
+                foregroundColor: theme.colorScheme.onPrimaryContainer,
+                child: const Icon(Icons.event_available_rounded),
+              ),
+              title: Text(l.quickNewAppointment),
+              subtitle: Text(l.newAppointmentLabel),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.go('/appointments/new');
+              },
+            ),
+            const SizedBox(height: 4),
+            ListTile(
+              leading: CircleAvatar(
+                backgroundColor: theme.colorScheme.secondaryContainer,
+                foregroundColor: theme.colorScheme.onSecondaryContainer,
+                child: const Icon(Icons.person_add_alt_1_rounded),
+              ),
+              title: Text(l.quickNewPatient),
+              subtitle: Text(l.newPatientLabel),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.go('/patients/new');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _body(BuildContext context, Clinic clinic, DashboardState state) {
     if (state.status == DashboardLoadStatus.loading ||
