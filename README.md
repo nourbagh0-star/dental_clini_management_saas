@@ -132,6 +132,8 @@ To install directly to a connected Android phone or emulator:
 adb install -r build/app/outputs/flutter-apk/app-release.apk
 ```
 
+Or download prebuilt APK binaries directly from [GitHub Releases](https://github.com/nourbagh0-star/dental_clini_management_saas/releases).
+
 ### Web Production Bundle
 ```bash
 flutter build web --release
