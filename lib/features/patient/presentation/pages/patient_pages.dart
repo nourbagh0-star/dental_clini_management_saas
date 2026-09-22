@@ -35,6 +35,7 @@ class _PatientsPageState extends State<PatientsPage> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final clinic = context.watch<ClinicCubit>().state.activeClinic;
     if (clinic == null) return _PatientMessage(l.chooseClinicFirst);
     if (_loadedClinicId != clinic.id) {
@@ -73,12 +74,29 @@ class _PatientsPageState extends State<PatientsPage> {
                       textInputAction: TextInputAction.search,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.search),
-                        labelText: l.searchPatientLabel,
+                        hintText: l.searchPatientLabel,
+                        suffixIcon: _search.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                onPressed: () {
+                                  _search.clear();
+                                  setState(() {});
+                                  context.read<PatientCubit>().load(clinic.id);
+                                },
+                              )
+                            : null,
                       ),
+                      onChanged: (value) {
+                        setState(() {});
+                        context.read<PatientCubit>().load(
+                              clinic.id,
+                              query: value,
+                            );
+                      },
                       onSubmitted: (value) => context.read<PatientCubit>().load(
-                        clinic.id,
-                        query: value,
-                      ),
+                            clinic.id,
+                            query: value,
+                          ),
                     ),
                     const SizedBox(height: AppSpacing.medium),
                     if (state.status == PatientStatus.loading)
@@ -94,29 +112,85 @@ class _PatientsPageState extends State<PatientsPage> {
                       _PatientMessage(l.patientActionUnavailable),
                     if (state.status == PatientStatus.ready &&
                         state.patients.isEmpty)
-                      _PatientMessage(l.noPatientsFound),
-                    if (state.patients.isNotEmpty)
+                      Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: theme.colorScheme.outlineVariant
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 40,
+                            horizontal: 24,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.person_search_outlined,
+                                size: 56,
+                                color: theme.colorScheme.outline,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                l.noPatientsFound,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 16),
+                              FilledButton.icon(
+                                onPressed: () => context.go('/patients/new'),
+                                icon:
+                                    const Icon(Icons.person_add_alt_1, size: 18),
+                                label: Text(l.newPatientLabel),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (state.patients.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 4,
+                        ),
+                        child: Text(
+                          '${state.patients.length} ${l.patientsTitle.toLowerCase()}',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
                       ResponsiveRecordView(
                         expandAt: 760,
                         compact: Column(
                           children: [
                             for (final patient in state.patients)
-                              Card(
-                                child: ListTile(
-                                  onTap: () =>
-                                      context.go('/patients/${patient.id}'),
-                                  title: Text(patient.fullName),
-                                  subtitle: Text(
-                                    '${patient.patientNumber} · ${patient.phone ?? patient.email ?? l.noContactLabel}',
-                                  ),
-                                  trailing: patient.isArchived
-                                      ? Chip(label: Text(l.archivedLabel))
-                                      : const Icon(Icons.chevron_right),
-                                ),
+                              _PatientCard(
+                                patient: patient,
+                                onTap: () =>
+                                    context.go('/patients/${patient.id}'),
                               ),
                           ],
                         ),
                         expanded: Card(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: theme.colorScheme.outlineVariant
+                                  .withValues(alpha: 0.6),
+                            ),
+                          ),
+                          clipBehavior: Clip.antiAlias,
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: DataTable(
@@ -155,11 +229,308 @@ class _PatientsPageState extends State<PatientsPage> {
                           ),
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PatientCard extends StatelessWidget {
+  const _PatientCard({
+    required this.patient,
+    required this.onTap,
+  });
+
+  final Patient patient;
+  final VoidCallback onTap;
+
+  static int? _age(Patient p) {
+    if (p.birthDate != null) {
+      final birth = DateTime.tryParse(p.birthDate!);
+      if (birth != null) {
+        final now = DateTime.now();
+        int age = now.year - birth.year;
+        if (now.month < birth.month ||
+            (now.month == birth.month && now.day < birth.day)) {
+          age--;
+        }
+        return age < 0 ? 0 : age;
+      }
+    }
+    return p.approximateAgeYears;
+  }
+
+  static String _initials(Patient patient) {
+    final first = patient.firstName.trim().isNotEmpty
+        ? patient.firstName.trim().characters.first
+        : '';
+    final last = patient.lastName.trim().isNotEmpty
+        ? patient.lastName.trim().characters.first
+        : '';
+    final res = '$first$last'.trim();
+    return res.isNotEmpty ? res.toUpperCase() : 'P';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l = AppLocalizations.of(context);
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final age = _age(patient);
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: patient.isArchived
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : theme.colorScheme.primaryContainer,
+                foregroundColor: patient.isArchived
+                    ? theme.colorScheme.onSurfaceVariant
+                    : theme.colorScheme.primary,
+                child: Text(
+                  _initials(patient),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            patient.fullName,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: patient.isArchived
+                                  ? theme.colorScheme.outline
+                                  : theme.colorScheme.onSurface,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (age != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            l.yearsOldValue(age),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.6),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '#${patient.patientNumber}',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        if (patient.isArchived)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.errorContainer
+                                  .withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              l.archivedLabel,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.error,
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: Colors.green.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  l.activeLabel,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (patient.isMinorDeclared)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.tertiaryContainer
+                                  .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.shield_outlined,
+                                  size: 11,
+                                  color: theme.colorScheme.tertiary,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  l.minorBadge,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color:
+                                        theme.colorScheme.onTertiaryContainer,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        if (patient.phone != null &&
+                            patient.phone!.trim().isNotEmpty) ...[
+                          Icon(
+                            Icons.phone_outlined,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              patient.phone!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ] else if (patient.email != null &&
+                            patient.email!.trim().isNotEmpty) ...[
+                          Icon(
+                            Icons.email_outlined,
+                            size: 14,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              patient.email!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ] else
+                          Text(
+                            l.noContactLabel,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.outline,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  isRtl
+                      ? Icons.chevron_left_rounded
+                      : Icons.chevron_right_rounded,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
