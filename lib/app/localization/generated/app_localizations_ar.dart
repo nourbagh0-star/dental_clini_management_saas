@@ -2328,4 +2328,55 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get quickToothActions => 'إجراءات السن السريعة';
+
+  @override
+  String get beforeAfterGalleryTitle => 'معرض الصور قبل وبعد العلاج';
+
+  @override
+  String get beforeLabel => 'قبل';
+
+  @override
+  String get afterLabel => 'بعد';
+
+  @override
+  String get selectBeforePhoto => 'اختر صورة قبل';
+
+  @override
+  String get selectAfterPhoto => 'اختر صورة بعد';
+
+  @override
+  String get selectPhotosToCompare => 'اختر صورتين لمقارنة نتائج العلاج.';
+
+  @override
+  String get analyticsAndReportsTitle => 'التحليلات والتقارير';
+
+  @override
+  String get exportDataLabel => 'تصدير البيانات (CSV)';
+
+  @override
+  String get exportPatientsLabel => 'تصدير المرضى';
+
+  @override
+  String get exportAppointmentsLabel => 'تصدير المواعيد';
+
+  @override
+  String get exportInvoicesLabel => 'تصدير الفواتير';
+
+  @override
+  String get copyToClipboard => 'نسخ CSV';
+
+  @override
+  String get csvCopiedSuccess => 'تم نسخ بيانات CSV إلى الحافظة بنجاح.';
+
+  @override
+  String get attendanceRate => 'معدل حضور المواعيد';
+
+  @override
+  String get financialSummaryTitle => 'الملخص المالي';
+
+  @override
+  String get topProceduresTitle => 'أكثر الإجراءات الطبية طلباً';
+
+  @override
+  String get exportCenterTitle => 'مركز تصدير البيانات';
 }

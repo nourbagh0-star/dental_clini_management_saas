@@ -12,6 +12,7 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/error/failure_message.dart';
 import '../../../../core/value/money.dart';
 import '../../../appointment/domain/appointment_models.dart';
+import '../../../appointment/presentation/whatsapp_reminder_helper.dart';
 import '../../../clinic/domain/clinic_models.dart';
 import '../../../clinic/presentation/clinic_cubit.dart';
 import '../../domain/dashboard_models.dart';
@@ -85,6 +86,11 @@ class _DashboardPageState extends State<DashboardPage> {
               appBar: AppBar(
                 title: Text(AppLocalizations.of(context).dashboardTitle),
                 actions: [
+                  IconButton(
+                    tooltip: AppLocalizations.of(context).analyticsAndReportsTitle,
+                    onPressed: () => context.go('/analytics'),
+                    icon: const Icon(Icons.analytics_outlined),
+                  ),
                   if (clinicState.activeMembership?.isOwner ?? false)
                     IconButton(
                       tooltip: AppLocalizations.of(context).auditOpen,
@@ -688,6 +694,27 @@ class _InChairOrNextHeroCard extends StatelessWidget {
                     icon: const Icon(Icons.medical_services_outlined, size: 18),
                     label: Text(l10n.openClinicalSession),
                   ),
+                if (!isInChair)
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      unawaited(HapticFeedback.lightImpact());
+                      WhatsAppReminderHelper.sendReminder(
+                        context: context,
+                        patientId: appointment.patientId,
+                        patientName: appointment.patientName,
+                        dentistName: appointment.dentistLabel,
+                        startsAt: appointment.startsAt,
+                        clinicId: context.read<ClinicCubit>().state.activeClinicId ?? '',
+                        location: tz.getLocation(timeZone),
+                      );
+                    },
+                    icon: const Icon(
+                      Icons.chat_bubble_outline_rounded,
+                      size: 18,
+                      color: Color(0xFF25D366),
+                    ),
+                    label: Text(l10n.sendWhatsAppReminder),
+                  ),
                 OutlinedButton.icon(
                   onPressed: () {
                     unawaited(HapticFeedback.lightImpact());
@@ -897,27 +924,55 @@ class _AppointmentRow extends StatelessWidget {
         subtitle: Text(
           '${DateFormat.jm(locale).format(local)} · ${appointment.patientNumber} · ${appointment.dentistLabel}',
         ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: statusBg,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(statusIcon, size: 14, color: statusFg),
-              const SizedBox(width: 4),
-              Text(
-                status,
-                style: TextStyle(
-                  color: statusFg,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (appointment.status == AppointmentStatus.scheduled ||
+                appointment.status == AppointmentStatus.confirmed)
+              IconButton(
+                icon: const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 18,
+                  color: Color(0xFF25D366),
                 ),
+                tooltip: AppLocalizations.of(context).sendWhatsAppReminder,
+                visualDensity: VisualDensity.compact,
+                onPressed: () {
+                  unawaited(HapticFeedback.lightImpact());
+                  WhatsAppReminderHelper.sendReminder(
+                    context: context,
+                    patientId: appointment.patientId,
+                    patientName: appointment.patientName,
+                    dentistName: appointment.dentistLabel,
+                    startsAt: appointment.startsAt,
+                    clinicId: context.read<ClinicCubit>().state.activeClinicId ?? '',
+                    location: tz.getLocation(timeZone),
+                  );
+                },
               ),
-            ],
-          ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusBg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(statusIcon, size: 14, color: statusFg),
+                  const SizedBox(width: 4),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      color: statusFg,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         onTap: () {
           unawaited(HapticFeedback.lightImpact());

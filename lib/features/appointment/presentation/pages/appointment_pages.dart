@@ -10,7 +10,6 @@ import '../../../../core/error/failure_message.dart';
 import '../../../../core/widgets/app_dialog.dart';
 import '../../../../app/localization/generated/app_localizations.dart';
 import '../../../../app/theme/app_theme.dart';
-import '../../../../core/utils/communication_launcher.dart';
 import '../../../clinic/presentation/clinic_cubit.dart';
 import '../../../patient/domain/patient_models.dart';
 import '../../../patient/presentation/patient_cubit.dart';
@@ -18,6 +17,7 @@ import '../../../schedule/domain/schedule_models.dart';
 import '../../../schedule/presentation/schedule_cubit.dart';
 import '../../domain/appointment_models.dart';
 import '../appointment_cubit.dart';
+import '../whatsapp_reminder_helper.dart';
 
 class AppointmentCalendarPage extends StatefulWidget {
   const AppointmentCalendarPage({super.key});
@@ -1699,62 +1699,15 @@ class _AppointmentCard extends StatelessWidget {
   }
 
   Future<void> _sendWhatsAppReminder(BuildContext context) async {
-    final l = AppLocalizations.of(context);
-    PatientCubit? patientCubit;
-    try {
-      patientCubit = context.read<PatientCubit>();
-    } catch (_) {
-      patientCubit = null;
-    }
-    final patient = patientCubit?.state.patients
-        .where((p) => p.id == appointment.patientId)
-        .firstOrNull;
-    final phone = patient?.phone;
-    if (phone == null || phone.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l.noPhoneForPatient),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    final clinic = context
-        .read<ClinicCubit>()
-        .state
-        .memberships
-        .where((m) => m.clinic.id == appointment.clinicId)
-        .firstOrNull
-        ?.clinic;
-    final clinicName = (clinic != null && clinic.name.trim().isNotEmpty)
-        ? clinic.name
-        : l.clinicSectionTitle;
-
-    final localStart = tz.TZDateTime.from(appointment.startsAt, location);
-    final dateStr = DateFormat.yMMMMEEEEd().format(localStart);
-    final timeStr = DateFormat.jm().format(localStart);
-
-    final message = l.reminderMessageTemplate(
-      appointment.patientName,
-      clinicName,
-      appointment.dentistName,
-      dateStr,
-      timeStr,
+    await WhatsAppReminderHelper.sendReminder(
+      context: context,
+      patientId: appointment.patientId,
+      patientName: appointment.patientName,
+      dentistName: appointment.dentistName,
+      startsAt: appointment.startsAt,
+      clinicId: appointment.clinicId,
+      location: location,
     );
-
-    final success = await CommunicationLauncher.launchWhatsApp(
-      phone: phone,
-      message: message,
-    );
-    if (!success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l.communicationLaunchFailed),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 }
 

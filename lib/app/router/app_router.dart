@@ -21,8 +21,10 @@ import '../../features/treatment_plan/presentation/pages/treatment_plan_page.dar
 import '../../features/treatment_plan/presentation/pages/procedure_catalogue_page.dart';
 import '../../features/clinical_session/presentation/pages/clinical_session_pages.dart';
 import '../../features/patient_file/presentation/pages/patient_file_pages.dart';
+import '../../features/patient_file/presentation/pages/before_after_gallery_page.dart';
 import '../../features/billing/presentation/pages/billing_page.dart';
 import '../../features/dashboard/presentation/pages/dashboard_page.dart';
+import '../../features/dashboard/presentation/pages/analytics_page.dart';
 import '../../features/audit/presentation/pages/audit_log_page.dart';
 import '../../features/audit/domain/audit_models.dart';
 import '../../features/audit/presentation/audit_access_gate.dart';
@@ -280,6 +282,14 @@ abstract final class AppRouter {
               ),
             ),
             GoRoute(
+              path: '/patients/:id/gallery',
+              builder: (_, state) => AuditAccessGate(
+                intent: AuditAccessIntent.patientFiles,
+                subjectId: state.pathParameters['id']!,
+                child: BeforeAfterGalleryPage(patientId: state.pathParameters['id']!),
+              ),
+            ),
+            GoRoute(
               path: '/patients/:id/billing',
               builder: (_, state) =>
                   BillingPage(patientId: state.pathParameters['id']!),
@@ -291,6 +301,10 @@ abstract final class AppRouter {
             GoRoute(
               path: '/dashboard',
               builder: (_, state) => const DashboardPage(),
+            ),
+            GoRoute(
+              path: '/analytics',
+              builder: (_, state) => const AnalyticsPage(),
             ),
             GoRoute(
               path: '/audit',

@@ -4377,6 +4377,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quick Tooth Actions'**
   String get quickToothActions;
+
+  /// No description provided for @beforeAfterGalleryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before & After Gallery'**
+  String get beforeAfterGalleryTitle;
+
+  /// No description provided for @beforeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Before'**
+  String get beforeLabel;
+
+  /// No description provided for @afterLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'After'**
+  String get afterLabel;
+
+  /// No description provided for @selectBeforePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Before Photo'**
+  String get selectBeforePhoto;
+
+  /// No description provided for @selectAfterPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Select After Photo'**
+  String get selectAfterPhoto;
+
+  /// No description provided for @selectPhotosToCompare.
+  ///
+  /// In en, this message translates to:
+  /// **'Select two photos to compare the treatment results.'**
+  String get selectPhotosToCompare;
+
+  /// No description provided for @analyticsAndReportsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics & Reports'**
+  String get analyticsAndReportsTitle;
+
+  /// No description provided for @exportDataLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Data (CSV)'**
+  String get exportDataLabel;
+
+  /// No description provided for @exportPatientsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Patients'**
+  String get exportPatientsLabel;
+
+  /// No description provided for @exportAppointmentsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Appointments'**
+  String get exportAppointmentsLabel;
+
+  /// No description provided for @exportInvoicesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Invoices'**
+  String get exportInvoicesLabel;
+
+  /// No description provided for @copyToClipboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy CSV'**
+  String get copyToClipboard;
+
+  /// No description provided for @csvCopiedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV copied to clipboard.'**
+  String get csvCopiedSuccess;
+
+  /// No description provided for @attendanceRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment Attendance Rate'**
+  String get attendanceRate;
+
+  /// No description provided for @financialSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial Overview'**
+  String get financialSummaryTitle;
+
+  /// No description provided for @topProceduresTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Top Clinic Procedures'**
+  String get topProceduresTitle;
+
+  /// No description provided for @exportCenterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Data Export Center'**
+  String get exportCenterTitle;
 }
 
 class _AppLocalizationsDelegate

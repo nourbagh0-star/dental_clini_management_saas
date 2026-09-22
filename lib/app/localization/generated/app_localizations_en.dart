@@ -2352,4 +2352,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quickToothActions => 'Quick Tooth Actions';
+
+  @override
+  String get beforeAfterGalleryTitle => 'Before & After Gallery';
+
+  @override
+  String get beforeLabel => 'Before';
+
+  @override
+  String get afterLabel => 'After';
+
+  @override
+  String get selectBeforePhoto => 'Select Before Photo';
+
+  @override
+  String get selectAfterPhoto => 'Select After Photo';
+
+  @override
+  String get selectPhotosToCompare =>
+      'Select two photos to compare the treatment results.';
+
+  @override
+  String get analyticsAndReportsTitle => 'Analytics & Reports';
+
+  @override
+  String get exportDataLabel => 'Export Data (CSV)';
+
+  @override
+  String get exportPatientsLabel => 'Export Patients';
+
+  @override
+  String get exportAppointmentsLabel => 'Export Appointments';
+
+  @override
+  String get exportInvoicesLabel => 'Export Invoices';
+
+  @override
+  String get copyToClipboard => 'Copy CSV';
+
+  @override
+  String get csvCopiedSuccess => 'CSV copied to clipboard.';
+
+  @override
+  String get attendanceRate => 'Appointment Attendance Rate';
+
+  @override
+  String get financialSummaryTitle => 'Financial Overview';
+
+  @override
+  String get topProceduresTitle => 'Top Clinic Procedures';
+
+  @override
+  String get exportCenterTitle => 'Data Export Center';
 }

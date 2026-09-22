@@ -1445,6 +1445,13 @@ class PatientProfilePage extends StatelessWidget {
                         icon: const Icon(Icons.folder_outlined),
                         label: Text(l.patientFilesTitle),
                       ),
+                    if (canReadVisits)
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            context.go('/patients/$patientId/gallery'),
+                        icon: const Icon(Icons.compare_rounded),
+                        label: Text(l.beforeAfterGalleryTitle),
+                      ),
                     if (isOwner)
                       OutlinedButton.icon(
                         onPressed: patientState.mutating

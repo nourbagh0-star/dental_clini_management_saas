@@ -2356,4 +2356,56 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get quickToothActions => 'Быстрые действия с зубом';
+
+  @override
+  String get beforeAfterGalleryTitle => 'Галерея До и После';
+
+  @override
+  String get beforeLabel => 'До';
+
+  @override
+  String get afterLabel => 'После';
+
+  @override
+  String get selectBeforePhoto => 'Выберите фото «До»';
+
+  @override
+  String get selectAfterPhoto => 'Выберите фото «После»';
+
+  @override
+  String get selectPhotosToCompare =>
+      'Выберите две фотографии для сравнения результатов лечения.';
+
+  @override
+  String get analyticsAndReportsTitle => 'Аналитика и отчеты';
+
+  @override
+  String get exportDataLabel => 'Экспорт данных (CSV)';
+
+  @override
+  String get exportPatientsLabel => 'Экспорт пациентов';
+
+  @override
+  String get exportAppointmentsLabel => 'Экспорт приемов';
+
+  @override
+  String get exportInvoicesLabel => 'Экспорт счетов';
+
+  @override
+  String get copyToClipboard => 'Копировать CSV';
+
+  @override
+  String get csvCopiedSuccess => 'Данные CSV скопированы в буфер обмена.';
+
+  @override
+  String get attendanceRate => 'Посещаемость приемов';
+
+  @override
+  String get financialSummaryTitle => 'Финансовый обзор';
+
+  @override
+  String get topProceduresTitle => 'Популярные процедуры';
+
+  @override
+  String get exportCenterTitle => 'Центр экспорта данных';
 }
